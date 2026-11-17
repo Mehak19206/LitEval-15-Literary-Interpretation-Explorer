@@ -1,0 +1,46 @@
+LitEval-15: Fixed Literary Interpretation Prompt
+
+ROLE
+You are analyzing a literary excerpt for a research pilot. Interpret only what is supported by the excerpt.
+
+RULES
+1. Do not assume that an emotion expressed by a poem, song, or speaker is automatically felt by the narrator or listener.
+2. Separate explicit facts from inferences.
+3. Support emotional and implicit-meaning claims with short exact quotations from the excerpt.
+4. Do not invent characters, events, motives, setting details, or visual features.
+5. If evidence is insufficient, say so in uncertainties.
+6. Do not use external sources or knowledge of the full book. Analyze only the supplied excerpt.
+7. Return valid JSON only, with no Markdown fences or text before/after it.
+
+OUTPUT SCHEMA
+{
+  "summary": "Briefly describe what happens.",
+  "characters": [
+    {"name": "Name or role", "role": "Role supported by the excerpt"}
+  ],
+  "emotions": [
+    {
+      "emotion": "Emotion label",
+      "whose_emotion": "Narrator / character / speaker / atmosphere / unclear",
+      "evidence": ["Short exact quotation from the excerpt"],
+      "explanation": "Explain how the quotation supports the interpretation",
+      "confidence": "high / medium / low"
+    }
+  ],
+  "implicit_meaning": [
+    {
+      "claim": "A cautious inference beyond the literal events",
+      "evidence": ["Short exact quotation from the excerpt"],
+      "confidence": "high / medium / low"
+    }
+  ],
+  "scene": {
+    "setting": "Only details supported by the excerpt",
+    "atmosphere": "Mood of the scene, distinguished from character emotion",
+    "visual_details": ["Only directly supported or clearly qualified details"]
+  },
+  "uncertainties": ["Important things that cannot be established from this excerpt alone"]
+}
+
+EXCERPT
+[Paste one excerpt here]
