@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LitEval-15: Literary Interpretation Explorer</title>
+<style>
+:root{
+  --bg:#0d1420; --panel:#141d2e; --panel2:#1a2538; --line:#2a3750;
+  --text:#e7eaf1; --muted:#a2adc2; --blue:#7fa2d1; --blue-bg:rgba(127,162,209,.09);
+  --burg:#c0506d; --burg-deep:#5a1e32; --burg-bg:rgba(192,80,109,.09);
+  --sand:#cdb07a; --good:#7fa2d1; --mid:#cdb07a; --low:#c0506d; --none:#6b778d;
+  --serif:Georgia,"Palatino Linotype","Book Antiqua",serif;
+  --sans:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 var(--sans)}
+h1,h2,h3,h4{font-family:var(--serif);font-weight:600;line-height:1.25;margin:0 0 .5em}
+h1{font-size:2rem} h2{font-size:1.5rem} h3{font-size:1.15rem} h4{font-size:1rem}
+p{margin:0 0 .8em}
+a{color:var(--blue)}
+button,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.wrap{max-width:1280px;margin:0 auto;padding:0 28px}
+header.top{padding:34px 0 22px;border-bottom:1px solid var(--line)}
+.badge{display:inline-block;border:1px solid var(--burg);color:#f0c6d1;background:var(--burg-deep);border-radius:999px;padding:3px 12px;font-size:.85rem;margin-bottom:12px}
+.sub{color:var(--muted);font-family:var(--serif);font-size:1.05rem;margin:0 0 14px}
+.rq{max-width:78ch;border-left:3px solid var(--blue);padding:4px 0 4px 16px;font-family:var(--serif);font-size:1.08rem}
+nav.bar{position:sticky;top:0;z-index:20;background:rgba(13,20,32,.97);border-bottom:1px solid var(--line)}
+nav.bar .wrap{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;padding-top:10px;padding-bottom:10px}
+nav.bar a{color:var(--muted);text-decoration:none;padding:4px 2px;border-bottom:2px solid transparent}
+nav.bar a:hover{color:var(--text);border-bottom-color:var(--blue)}
+.spacer{flex:1}
+.ctl{display:flex;align-items:center;gap:8px}
+.ctl label{color:var(--muted);font-size:.9rem}
+select{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 10px}
+.btn{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 14px;cursor:pointer}
+.btn:hover{border-color:var(--blue)}
+section{padding:36px 0 8px}
+section>.wrap>h2{padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:18px}
+.lede{color:var(--muted);max-width:80ch}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:20px;margin-bottom:18px}
+.grid{display:grid;gap:16px}
+.g5{grid-template-columns:repeat(5,1fr)} .g4{grid-template-columns:repeat(4,1fr)} .g3{grid-template-columns:repeat(3,1fr)} .g2{grid-template-columns:repeat(2,1fr)}
+@media (max-width:1000px){.g5,.g4{grid-template-columns:repeat(2,1fr)} .g3{grid-template-columns:1fr}}
+@media (max-width:640px){.g5,.g4,.g2{grid-template-columns:1fr} .wrap{padding:0 16px}}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+.stat b{display:block;font-family:var(--serif);font-size:1.9rem;color:var(--blue);line-height:1.1}
+.stat span{color:var(--muted);font-size:.92rem}
+table{width:100%;border-collapse:collapse;font-size:.95rem}
+th,td{text-align:left;vertical-align:top;padding:9px 10px;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:600;background:var(--panel2)}
+.scroll{overflow-x:auto}
+.cellbtn{background:none;border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer}
+.cellbtn:hover{border-color:var(--blue);background:var(--blue-bg)}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.tab{background:var(--panel2);border:1px solid var(--line);border-radius:6px 6px 0 0;padding:8px 18px;cursor:pointer}
+.tab[aria-selected="true"]{border-color:var(--blue);border-bottom:2px solid var(--blue);background:var(--blue-bg)}
+.tab:disabled{opacity:.45;cursor:not-allowed}
+.meta dt{color:var(--muted);font-size:.88rem;margin-top:10px}
+.meta dd{margin:2px 0 0}
+.muted{color:var(--muted)}
+.small{font-size:.9rem}
+.missing{color:var(--muted);font-style:italic}
+.legend{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center;margin:0 0 16px;font-size:.92rem;color:var(--muted)}
+.sw{display:inline-block;width:28px;height:14px;vertical-align:middle;margin-right:6px;border-left:3px solid var(--blue);background:var(--blue-bg)}
+.sw.inf{border-left:3px dashed var(--burg);background:var(--burg-bg)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:4px 14px;cursor:pointer;font-size:.92rem}
+.chip[aria-pressed="true"]{border-color:var(--blue);background:var(--blue-bg)}
+.card{border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:14px;background:var(--panel2)}
+.card h4{margin-bottom:4px}
+.who{color:var(--muted);font-size:.92rem;margin-bottom:8px}
+.conf{display:inline-block;border:1px solid var(--line);border-radius:4px;padding:1px 8px;font-size:.82rem;color:var(--muted);margin-left:6px;white-space:nowrap}
+.lab{display:block;font-size:.82rem;color:var(--muted);margin:10px 0 4px}
+.evd{margin:6px 0;padding:8px 12px;border-left:3px solid var(--blue);background:var(--blue-bg);font-family:var(--serif);font-size:1.02rem;overflow-wrap:anywhere}
+.inf{margin:6px 0;padding:8px 12px;border-left:3px dashed var(--burg);background:var(--burg-bg);overflow-wrap:anywhere}
+.only-evidence .inf, .only-evidence .lab-inf{display:none}
+.only-inference .evd, .only-inference .lab-evd{display:none}
+ul.plain{margin:6px 0 0;padding-left:20px}
+ul.plain li{margin:3px 0}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px;vertical-align:baseline;background:var(--none)}
+.hide-dots .dot{display:none}
+.t-good{background:var(--good)} .t-mid{background:var(--mid)} .t-low{background:var(--low)} .t-none{background:var(--none)}
+.notrec{color:var(--muted);font-style:italic}
+.revnote{margin:6px 0;padding:8px 12px;border-left:3px solid var(--sand);background:rgba(205,176,122,.07)}
+.panel-col{min-width:0}
+.panel-col>h3{border-bottom:1px solid var(--line);padding-bottom:8px}
+.note{border:1px solid var(--line);border-left:3px solid var(--sand);background:rgba(205,176,122,.07);border-radius:6px;padding:10px 14px;margin:12px 0;font-size:.94rem}
+.flag{border:1px solid var(--line);border-left:3px solid var(--burg);border-radius:6px;padding:10px 14px;margin:10px 0;background:var(--panel)}
+.flag.ok{border-left-color:var(--blue)}
+.flag b{font-family:var(--serif)}
+details{margin:10px 0}
+summary{cursor:pointer;color:var(--blue)}
+footer{padding:30px 0 50px;color:var(--muted);font-size:.9rem;border-top:1px solid var(--line);margin-top:36px}
+code{background:var(--panel2);padding:1px 6px;border-radius:4px;font-size:.9em}
+.rawbox{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:12px;font-size:.85rem;max-height:340px;overflow:auto}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <span class="badge">Exploratory pilot: qualitative and preliminary</span>
+    <h1>LitEval-15: Literary Interpretation Explorer</h1>
+    <p class="sub">Beyond Emotion Labels: Evidence-Grounded Literary Interpretation with Language Models</p>
+    <p class="rq"><b>Research question.</b> How reliably do language models interpret emotions, context, and implicit meaning in literary excerpts, and are those interpretations grounded in textual evidence?</p>
+  </div>
+</header>
+
+<nav class="bar" aria-label="Sections">
+  <div class="wrap">
+    <a href="#dashboard">Dashboard</a>
+    <a href="#explorer">Excerpt explorer</a>
+    <a href="#compare">Model comparison</a>
+    <a href="#rubric">Evaluation rubric</a>
+    <a href="#limits">Limitations</a>
+    <a href="#dataflags">Data notes</a>
+    <span class="spacer"></span>
+    <div class="ctl"><label for="selExcerpt">Excerpt</label><select id="selExcerpt"></select></div>
+    <button class="btn" id="btnReset" type="button">Reset view</button>
+  </div>
+</nav>
+
+<main>
+<section id="dashboard"><div class="wrap">
+  <h2>Research dashboard</h2>
+  <div class="grid g5" id="stats"></div>
+  <p class="lede" style="margin-top:16px">The pilot applies one fixed analysis prompt to each excerpt and asks each model for a structured JSON interpretation. Outputs were then reviewed against a five-criterion rubric. Everything shown here comes from the three attached workbooks; nothing is generated live.</p>
+  <div class="panel scroll">
+    <h3>Coverage: excerpts by model</h3>
+    <table id="coverage"></table>
+    <p class="small muted" style="margin:10px 0 0">Select a cell to open that output in the explorer. Source works are inferred from output content, because the workbooks do not name them.</p>
+  </div>
+</div></section>
+
+<section id="explorer"><div class="wrap">
+  <h2>Excerpt explorer</h2>
+  <div class="grid g3" style="grid-template-columns:minmax(260px,1fr) 2fr">
+    <div class="panel" id="excerptInfo"></div>
+    <div>
+      <div class="tabs" role="tablist" aria-label="Model" id="modelTabs"></div>
+      <div class="legend" aria-label="Legend">
+        <span><span class="sw"></span>Quoted text the model offers as explicit evidence</span>
+        <span><span class="sw inf"></span>The model's inference or interpretation</span>
+      </div>
+      <div class="chips" style="margin-bottom:14px" role="group" aria-label="Show">
+        <span class="muted small">Show:</span>
+        <button class="chip" type="button" data-view="both" aria-pressed="true">Evidence and interpretation</button>
+        <button class="chip" type="button" data-view="evidence" aria-pressed="false">Quoted evidence only</button>
+        <button class="chip" type="button" data-view="inference" aria-pressed="false">Interpretation only</button>
+      </div>
+      <div id="outputView"></div>
+    </div>
+  </div>
+</div></section>
+
+<section id="compare"><div class="wrap">
+  <h2>Model comparison</h2>
+  <p class="lede">Compare the models on the excerpt selected in the top bar. Panels show what each model produced and what the evaluation workbook recorded; nothing is scored or ranked here.</p>
+  <div class="panel">
+    <div class="chips">
+      <div class="ctl"><label for="selAspect">Compare</label>
+        <select id="selAspect">
+          <option value="all">Summary, emotions, uncertainty</option>
+          <option value="summary">Summaries only</option>
+          <option value="emotions">Emotional interpretations</option>
+          <option value="evidence">Quoted evidence only</option>
+          <option value="uncertainty">Uncertainty handling</option>
+        </select>
+      </div>
+      <span class="muted small" style="margin-left:10px">Models:</span>
+      <span id="modelChips" class="chips" role="group" aria-label="Models to compare"></span>
+    </div>
+  </div>
+  <div class="grid g3" id="comparePanels"></div>
+  <div class="panel scroll" style="margin-top:18px">
+    <h3>Recorded evaluation ratings for this excerpt</h3>
+    <div id="compareRatings"></div>
+  </div>
+</div></section>
+
+<section id="rubric"><div class="wrap">
+  <h2>Evaluation rubric</h2>
+  <p class="lede">Rubric definitions come from <code>Rubric_Sheet.xlsx</code>. Recorded assessments come from <code>Model_Evaluation.xlsx</code>, shown in the reviewer's own words.</p>
+  <div class="note" id="rubricNote"></div>
+  <div class="chips" style="margin-bottom:14px">
+    <button class="chip" type="button" id="togDots" aria-pressed="true">Show indicator dots</button>
+    <button class="chip" type="button" id="togAll" aria-pressed="false">Show all 12 records</button>
+  </div>
+  <div id="rubricCards"></div>
+  <div class="panel scroll" id="rubricAll" hidden></div>
+</div></section>
+
+<section id="limits"><div class="wrap">
+  <h2>Research limitations and future vision</h2>
+  <div class="grid g2">
+    <div class="panel"><h3>What this pilot is</h3>
+      <ul class="plain">
+        <li>A four-excerpt qualitative pilot, not a validated benchmark.</li>
+        <li>The interface shows pre-generated outputs. No live AI inference happens here.</li>
+        <li>Differences between models are preliminary and do not establish that any model is generally better.</li>
+        <li>Model-stated confidence is self-report, not evidence that an interpretation is correct.</li>
+      </ul></div>
+    <div class="panel"><h3>Proposed work</h3>
+      <ul class="plain">
+        <li>The immersive narrative reader is a future vision, not a completed product.</li>
+        <li>A transcription-inspired approach to literary interpretation is proposed work, not a reproduced or validated method.</li>
+        <li>LitEval-15 is described as 15 excerpts from five public-domain works. This workbook set contains four of them.</li>
+      </ul></div>
+  </div>
+</div></section>
+
+<section id="dataflags"><div class="wrap">
+  <h2>Data notes and flags</h2>
+  <p class="lede">The three workbooks were joined automatically on excerpt ID and model name. Anything that could not be matched with confidence, or that required interpretation, is listed here.</p>
+  <div id="flags"></div>
+</div></section>
+</main>
+
+<footer><div class="wrap">LitEval-15 explorer. Data embedded from Rubric_Sheet.xlsx, Model_Evaluation.xlsx and Raw_Output.xlsx. Exploratory pilot; no live model calls.</div></footer>
+
+<script id="dataset" type="application/json">{"rubric": [{"criterion": "Interpretive Accuracy", "options": "Accurate / Partially Accurate / Inaccurate", "rule": "Does the interpretation match the passage?"}, {"criterion": "Evidence Grounding", "options": "Strong / Mixed / Weak", "rule": "Are claims supported by textual evidence?"}, {"criterion": "Emotional Precision", "options": "Precise / Partially Precise / Imprecise", "rule": "Are emotions distinguished from physical states, actions, and traits?"}, {"criterion": "Unsupported Inference", "options": "None / Minor / Major", "rule": "Does the model invent details or present guesses as facts?"}, {"criterion": "Uncertainty Calibration", "options": "Well-calibrated / Mixed / Poorly Calibrated", "rule": "Does confidence match the evidence and acknowledge ambiguity?"}], "evaluation": [{"row": 2, "excerptId": "JE004", "modelRaw": "Gemini", "fields": ["Partially accurate", "Mostly accurate", "Mixed ", "Hope or comfort ", " Physical Fire ", "Partial ", "Strong emotional interpretation, but a figurative phrase was turned into a potentially misleading visual detail."]}, {"row": 3, "excerptId": "JE004", "modelRaw": "Claue", "fields": ["Accurate", "Strong", "Mostly Strong", "Nothing Major", "Physical Fire", "Strong", "identifies several interpretations as uncertain instead of presenting them as established facts"]}, {"row": 4, "excerptId": "JE004", "modelRaw": "DeepSeek", "fields": ["Accurate", "Good , but less Comprehensive", "Strong", "Some ", "Nothing Major", "Good", null]}, {"row": 5, "excerptId": "JE005", "modelRaw": "Gemini", "fields": ["Mostly Accurate", "Mostly Accurate", "Mostly Strong", "Possible Ommision", "Some ", "Mixed", "Distinguishes several emotional states, but may classify physical pain as emotion and infer motives beyond the available evidence."]}, {"row": 6, "excerptId": "JE005", "modelRaw": "Claude", "fields": ["Accurate", "Strong, with some overinterpretation", "Mostly Strong", "Nothing Obvious", "Minor", "Strong", "Distinguishes fear of failure from physical pain more carefully, explores alternative explanations for food sharing, but sometimes infers emotions or motives not directly established."]}, {"row": 7, "excerptId": "JE005", "modelRaw": "DeepSeek", "fields": ["Accurate", "Strong, with a classification issue ", "Strong", "Minor", "Few ", "Strong", "Identifies fear of failure and hunger-related sadness using direct evidence. Somewhat blurs emotional states with descriptions of hardship and infers that food sharing was willing, although the narrator’s motive is uncertain. Scene details and uncertainty handling are generally strong."]}, {"row": 8, "excerptId": "HM002", "modelRaw": "Gemini", "fields": ["Accurate", "Mostly Accurate", "Strong", "Pride ", "Minor concerns redarding interpretation ", "Mixed", "Captures murder and betrayal; some interpretations, especially pride and the queen’s guilt, are stated too confidently."]}, {"row": 9, "excerptId": "HM002", "modelRaw": "Claude", "fields": ["Accurate", "Strong , with some overinterpretation", "Strong", "Nothing Major", "Minor", "Strong", "Separates multiple emotional dimensions and acknowledges ambiguity around identity and revenge; some emotional interpretations remain inferential."]}, {"row": 10, "excerptId": "HM002", "modelRaw": "DeepSeek", "fields": ["Accurate", "Strong", "Strong", "Nothing Major", "Minor", "Strong", "Supports emotions with direct quotations and distinguishes textual evidence from uncertainty about character identities and motives."]}, {"row": 11, "excerptId": "AW009", "modelRaw": "Gemini", "fields": ["Accurate", "Mostly Accurate", "Mostly Strong", "Possible omission of the Hatter’s irritation and the March Hare’s teasing intent as emotional interpretations", "Minor", "Mixed", "Captures Alice’s indignation, anger, curiosity, and amusement. Some interpretations are plausible but not explicitly established; several confidence ratings seem too high."]}, {"row": 12, "excerptId": "AW009", "modelRaw": "Claude", "fields": ["Accurate", "Strong", "Strong", "Nothing Major", "Minor", "Strong", "Provides nuanced emotional interpretations, separates scene atmosphere from individual emotions, and calibrates confidence for uncertain claims. Some interpretations of the hosts’ motives remain inferential."]}, {"row": 13, "excerptId": "AW009", "modelRaw": "DeepSeek", "fields": ["Accurate", "Strong", "Strong", "Possible omission of the Hatter’s surprise as an inferred emotion", "Minor", "Strong", "Uses direct quotations, distinguishes Alice’s assessment from the Dormouse’s unknown feelings, and avoids claiming certainty about the hosts’ motives."]}], "outputs": [{"row": 2, "excerptId": "JE004", "model": "Gemini", "raw": "{\n\"summary\": \"Bessie finishes tidying a room and makes a new doll bonnet for Georgiana while singing two songs. The narrator listens, finding an indescribable sadness in Bessie's voice during the first song and listening to a doleful second ballad about a poor orphan child, which causes the narrator to cry.\",\n\"characters\": [\n{\n\"name\": \"Bessie\",\n\"role\": \"Servant or caregiver dusting, tidying, sewing a doll bonnet, and singing\"\n},\n{\n\"name\": \"I / Miss Jane\",\n\"role\": \"Narrator (referred to as Miss Jane by Bessie) experiencing intense sadness/suffering while listening to Bessie sing\"\n},\n{\n\"name\": \"Georgiana\",\n\"role\": \"Owner of the doll for which Bessie is making a bonnet (not explicitly present in the scene)\"\n}\n],\n\"emotions\": [\n{\n\"emotion\": \"Sadness / morbid suffering\",\n\"whose_emotion\": \"Narrator\",\n\"evidence\": [\n\"I found in its melody an indescribable sadness\",\n\"morbid suffering to which I was a prey\"\n],\n\"explanation\": \"The narrator feels an overwhelming sadness listening to Bessie's songs, resulting in crying and intense distress.\",\n\"confidence\": \"high\"\n},\n{\n\"emotion\": \"Lively delight (past)\",\n\"whose_emotion\": \"Narrator\",\n\"evidence\": [\n\"I had often heard the song before, and always with lively delight\"\n],\n\"explanation\": \"The narrator recalls previously experiencing delight when hearing the song, contrasting with current feelings.\",\n\"confidence\": \"high\"\n},\n{\n\"emotion\": \"Preoccupied / unperceptive of narrator's internal state\",\n\"whose_emotion\": \"Bessie\",\n\"evidence\": [\n\"preoccupied with her work\",\n\"how could she divine the morbid suffering\"\n],\n\"explanation\": \"Bessie is focused on her sewing while singing and cannot sense or read the narrator's internal suffering.\",\n\"confidence\": \"medium\"\n},\n{\n\"emotion\": \"Doleful / mournful tone\",\n\"whose_emotion\": \"atmosphere\",\n\"evidence\": [\n\"like the saddest cadence of a funeral hymn\",\n\"a really doleful one\"\n],\n\"explanation\": \"The atmosphere of the room is shaped by the melancholy and doleful quality of the ballads sung by Bessie.\",\n\"confidence\": \"high\"\n}\n],\n\"implicit_meaning\": [\n{\n\"claim\": \"The narrator identifies deeply with the subject of the orphan ballad, causing an involuntary emotional breakdown.\",\n\"evidence\": [\n\"She might as well have said to the fire, “don’t burn!” but how could she divine the morbid suffering to which I was a prey?\"\n],\n\"confidence\": \"high\"\n},\n{\n\"claim\": \"The narrator's emotional state has shifted significantly from the past, turning previously enjoyable songs into sources of distress.\",\n\"evidence\": [\n\"I had often heard the song before, and always with lively delight... But now, though her voice was still sweet, I found in its melody an indescribable sadness.\"\n],\n\"confidence\": \"high\"\n}\n],\n\"scene\": {\n\"setting\": \"An indoor room containing a fire and a drawer with sewing materials.\",\n\"atmosphere\": \"Somber, quiet, and melancholy due to the doleful singing.\",\n\"visual_details\": [\n\"A small drawer full of splendid shreds of silk and satin\",\n\"A doll's bonnet being sewn\",\n\"A fire burning in the room\"\n]\n},\n\"uncertainties\": [\n\"The broader reasons behind the narrator's 'morbid suffering' and crying prior to or beyond the songs.\",\n\"The relationship between the narrator, Georgiana, and Bessie beyond what is observed in this room.\",\n\"The exact location or physical setting of the room (house, estate, room ownership).\"\n]\n}"}, {"row": 3, "excerptId": "JE004", "model": "Claude", "raw": "{\n  \"summary\": \"Bessie finishes tidying a room, washes her hands, and begins making a doll's bonnet for Georgiana from scraps of silk and satin. While she works she sings two songs, the first about gipsying 'a long time ago' and the second a ballad about a poor orphan child. The first-person narrator, who has previously enjoyed Bessie's singing, now hears sadness in it and is moved to tears. Bessie tells her not to cry, and the narrator remarks that Bessie cannot understand the suffering she is experiencing.\",\n  \"characters\": [\n    {\"name\": \"Bessie\", \"role\": \"A servant-like figure who dusts and tidies the room, sews a bonnet for Georgiana's doll, sings, and tries to comfort the narrator. Her exact position is not stated in the excerpt.\"},\n    {\"name\": \"Narrator (addressed as 'Miss Jane')\", \"role\": \"The first-person listener who has often heard Bessie sing and is now distressed by the songs.\"},\n    {\"name\": \"Georgiana\", \"role\": \"Owner of the doll for which Bessie makes a bonnet; she does not appear directly in the excerpt.\"}\n  ],\n  \"emotions\": [\n    {\n      \"emotion\": \"Sadness / melancholy\",\n      \"whose_emotion\": \"Narrator\",\n      \"evidence\": [\"an indescribable sadness\", \"the saddest cadence of a funeral hymn\"],\n      \"explanation\": \"The narrator reports hearing sadness in a melody that previously gave her pleasure, and compares the refrain to a funeral hymn. This is the narrator's perception of the music, which points to her own mood rather than proving Bessie feels sad.\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"emotion\": \"Deep distress / suffering\",\n      \"whose_emotion\": \"Narrator\",\n      \"evidence\": [\"don’t cry\", \"the morbid suffering to which I was a prey\"],\n      \"explanation\": \"Bessie's instruction not to cry implies the narrator is crying, and the narrator names her own state as 'morbid suffering'.\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"emotion\": \"Previous delight (contrasted with present sadness)\",\n      \"whose_emotion\": \"Narrator\",\n      \"evidence\": [\"always with lively delight\"],\n      \"explanation\": \"The narrator says she formerly enjoyed the song, which highlights that the change lies in her present state or in how she now hears it.\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"emotion\": \"Sorrow, weariness, loneliness, and hope in faith\",\n      \"whose_emotion\": \"Speaker of the ballad (the orphan child voice)\",\n      \"evidence\": [\"My feet they are sore, and my limbs they are weary;\", \"God is a friend to the poor orphan child.\"],\n      \"explanation\": \"The ballad's speaker expresses physical exhaustion, abandonment, and eventual consolation in God. These feelings belong to the song's speaker and should not be assumed to be Bessie's or the narrator's, though the narrator may be responding to them.\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"emotion\": \"Absorbed in work / possible lack of awareness of the narrator's state\",\n      \"whose_emotion\": \"Bessie\",\n      \"evidence\": [\"preoccupied with her work\", \"how could she divine the morbid suffering\"],\n      \"explanation\": \"Bessie is described as preoccupied with her sewing, and the narrator says she could not guess the narrator's suffering. Her inner feelings about the songs are not stated.\",\n      \"confidence\": \"medium\"\n    },\n    {\n      \"emotion\": \"Kindly concern\",\n      \"whose_emotion\": \"Bessie\",\n      \"evidence\": [\"“Come, Miss Jane, don’t cry,”\"],\n      \"explanation\": \"Bessie's remark reads as an attempt to comfort. The narrator's reply suggests the comfort is inadequate to the situation.\",\n      \"confidence\": \"medium\"\n    },\n    {\n      \"emotion\": \"Isolation / feeling misunderstood\",\n      \"whose_emotion\": \"Narrator\",\n      \"evidence\": [\"She might as well have said to the fire, “don’t burn!”\"],\n      \"explanation\": \"The comparison suggests the narrator regards her distress as beyond what Bessie's words can stop, and that Bessie does not grasp its depth.\",\n      \"confidence\": \"medium\"\n    }\n  ],\n  \"implicit_meaning\": [\n    {\n      \"claim\": \"The narrator may identify with the 'poor orphan child' of the ballad, since the song's themes of abandonment and loneliness coincide with her own tears. The excerpt does not state that the narrator is an orphan or why she is suffering.\",\n      \"evidence\": [\"Over the path of the poor orphan child.\", \"Though both of shelter and kindred despoiled;\"],\n      \"confidence\": \"low\"\n    },\n    {\n      \"claim\": \"The narrator's changed response to a familiar song suggests that her inner state has shifted, so that the same music now carries different emotional weight.\",\n      \"evidence\": [\"always with lively delight\", \"now, though her voice was still sweet, I found in its melody an indescribable sadness\"],\n      \"confidence\": \"high\"\n    },\n    {\n      \"claim\": \"The narrator's suffering is long-standing or deep rather than momentary, and is something she keeps largely to herself.\",\n      \"evidence\": [\"the morbid suffering to which I was a prey\"],\n      \"confidence\": \"low\"\n    },\n    {\n      \"claim\": \"The ballad offers religious consolation, and the narrator's tears suggest this consolation does not reach her in this moment. The excerpt does not state her reaction to the faith elements.\",\n      \"evidence\": [\"God, in His mercy, protection is showing,\", \"Heaven is a home, and a rest will not fail me;\"],\n      \"confidence\": \"low\"\n    },\n    {\n      \"claim\": \"Bessie's domestic, practical activity contrasts with the narrator's inner turmoil, reinforcing the gap between them.\",\n      \"evidence\": [\"began making a new bonnet for Georgiana’s doll\", \"how could she divine the morbid suffering\"],\n      \"confidence\": \"medium\"\n    }\n  ],\n  \"scene\": {\n    \"setting\": \"A room that Bessie has just dusted and tidied, with a fire present and a little drawer holding scraps of silk and satin. The room's type and location are not specified.\",\n    \"atmosphere\": \"Quiet, domestic, and increasingly melancholy; the ordinary sewing and singing are overlaid by the sadness of the songs and the narrator's tears.\",\n    \"visual_details\": [\n      \"A little drawer 'full of splendid shreds of silk and satin'\",\n      \"A doll's bonnet being made\",\n      \"A fire (implied by the narrator's remark about telling the fire not to burn)\"\n    ]\n  },\n  \"uncertainties\": [\n    \"The cause of the narrator's suffering is not stated.\",\n    \"Whether the narrator is an orphan or is actually identifying with the orphan in the ballad is not established.\",\n    \"Bessie's own feelings about the songs, and her relationship to the narrator and to Georgiana, are not explained beyond what she does and says.\",\n    \"The narrator's age, the time of day, and the specific location of the room are not given.\",\n    \"Whether the fire is physically burning in the room is only implied by the figurative remark.\",\n    \"Whether the narrator is crying openly or only on the verge of tears is not fully clear, though Bessie's remark suggests visible distress.\"\n  ]\n}"}, {"row": 4, "excerptId": "JE004", "model": "DeepSeek", "raw": "{\n  \"summary\": \"Bessie finishes cleaning and, after washing her hands, begins making a new bonnet for Georgiana's doll while singing. Jane listens as Bessie sings a song about gipsying and then a doleful ballad about a poor orphan child. Bessie tells Jane not to cry, but Jane's emotional suffering persists.\",\n  \"characters\": [\n    {\"name\": \"Bessie\", \"role\": \"A servant who dusts and tidies the room, washes her hands, makes a bonnet for Georgiana's doll, and sings while working.\"},\n    {\"name\": \"Jane\", \"role\": \"The narrator, who listens to Bessie's singing, recalls having heard the song before with delight, now finds sadness in it, and is told not to cry.\"},\n    {\"name\": \"Georgiana\", \"role\": \"The person for whose doll Bessie is making a new bonnet; does not appear or act in the excerpt.\"}\n  ],\n  \"emotions\": [\n    {\n      \"emotion\": \"Sadness\",\n      \"whose_emotion\": \"Narrator\",\n      \"evidence\": [\"I found in its melody an indescribable sadness\", \"came out like the saddest cadence of a funeral hymn\"],\n      \"explanation\": \"The narrator explicitly states that she now finds an indescribable sadness in Bessie's melody, and describes the refrain as like the saddest cadence of a funeral hymn.\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"emotion\": \"Morbid suffering\",\n      \"whose_emotion\": \"Narrator\",\n      \"evidence\": [\"the morbid suffering to which I was a prey\", \"don’t cry\"],\n      \"explanation\": \"The narrator describes herself as prey to morbid suffering, and Bessie tells her not to cry, indicating the narrator is crying or distressed.\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"emotion\": \"Lively delight (past)\",\n      \"whose_emotion\": \"Narrator\",\n      \"evidence\": [\"I had often heard the song before, and always with lively delight\"],\n      \"explanation\": \"The narrator recalls that she previously heard the song with lively delight, contrasted with her present sadness.\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"emotion\": \"Possible sorrow or dolefulness expressed by the song\",\n      \"whose_emotion\": \"speaker / unclear\",\n      \"evidence\": [\"a really doleful one\", \"My feet they are sore, and my limbs they are weary\"],\n      \"explanation\": \"The ballad is described as doleful and its lyrics express weariness and loneliness, but the excerpt does not establish that Bessie herself feels these emotions; the song's speaker expresses them.\",\n      \"confidence\": \"medium\"\n    }\n  ],\n  \"implicit_meaning\": [\n    {\n      \"claim\": \"The narrator's emotional state has changed from earlier enjoyment of the song to present sadness, coloring how she hears the same melody.\",\n      \"evidence\": [\"always with lively delight\", \"But now, though her voice was still sweet, I found in its melody an indescribable sadness\"],\n      \"confidence\": \"high\"\n    },\n    {\n      \"claim\": \"Bessie does not fully understand the depth of the narrator's distress.\",\n      \"evidence\": [\"She might as well have said to the fire, “don’t burn!”\", \"how could she divine the morbid suffering to which I was a prey?\"],\n      \"explanation\": \"The narrator compares Bessie's instruction not to cry to telling fire not to burn and explicitly questions whether Bessie could divine her suffering, implying Bessie does not grasp it.\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"claim\": \"The orphan ballad may resonate with the narrator's own sense of loneliness or lack of belonging, though the excerpt does not state this directly.\",\n      \"evidence\": [\"the poor orphan child\", \"the morbid suffering to which I was a prey\"],\n      \"confidence\": \"low\"\n    }\n  ],\n  \"scene\": {\n    \"setting\": \"A room that Bessie has finished dusting and tidying; a little drawer full of shreds of silk and satin is opened.\",\n    \"atmosphere\": \"Quiet domestic work contrasted with sadness and distress; the second ballad is described as doleful.\",\n    \"visual_details\": [\"a certain little drawer, full of splendid shreds of silk and satin\", \"a new bonnet for Georgiana’s doll\"]\n  },\n  \"uncertainties\": [\n    \"The exact nature or cause of the narrator's 'morbid suffering' is not stated in the excerpt.\",\n    \"Whether Bessie herself feels sadness while singing is not established; the excerpt describes the song as doleful and the narrator's perception of sadness, not Bessie's confirmed emotion.\",\n    \"The narrator's age, relationship to Bessie and Georgiana beyond the immediate scene, and the broader setting are not specified.\",\n    \"Whether the orphan ballad specifically relates to the narrator's own circumstances cannot be confirmed from the excerpt alone.\"\n  ]\n}"}, {"row": 5, "excerptId": "JE005", "model": "Gemini", "raw": "{\"summary\":\"The narrator describes their difficult first quarter at Lowood, detailing struggles with new rules, severe cold, inadequate clothing, physical suffering from chilblains, and scarce food supplies. Older students coerced younger ones out of their food, leading the narrator to share their minimal rations and cry from hunger.\",\"characters\":[{\"name\":\"Narrator\",\"role\":\"A pupil at Lowood who suffers from cold, hunger, and strict rules, and shares their food with others\"},{\"name\":\"Great girls\",\"role\":\"Older pupils who coax or menace younger pupils to take their food portions\"},{\"name\":\"Younger pupils / little ones\",\"role\":\"Younger children who are targeted by older pupils for their food portions\"},{\"name\":\"Two claimants / third claimant\",\"role\":\"Pupils who received portions of the narrator's brown bread and coffee\"}],\"emotions\":[{\"emotion\":\"Fear\",\"whose_emotion\":\"Narrator\",\"evidence\":[\"The fear of failure in these points harassed me worse than the physical hardships of my lot\"],\"explanation\":\"The narrator explicitly states being harassed by the fear of failing to habituate to new rules and unwonted tasks.\",\"confidence\":\"high\"},{\"emotion\":\"Distracting irritation\",\"whose_emotion\":\"Narrator\",\"evidence\":[\"I remember well the distracting irritation I endured from this cause every evening\"],\"explanation\":\"The narrator explicitly recalls enduring distracting irritation from inflamed feet/chilblains every evening.\",\"confidence\":\"high\"},{\"emotion\":\"Torture\",\"whose_emotion\":\"Narrator\",\"evidence\":[\"the torture of thrusting the swelled, raw, and stiff toes into my shoes in the morning\"],\"explanation\":\"The narrator describes the physical and mental pain of putting shoes on swollen toes as torture.\",\"confidence\":\"high\"},{\"emotion\":\"Distress\",\"whose_emotion\":\"Narrator\",\"evidence\":[\"Then the scanty supply of food was distressing\"],\"explanation\":\"The narrator explicitly identifies the scarcity of food as a source of distress.\",\"confidence\":\"high\"},{\"emotion\":\"Sadness / distress from hunger\",\"whose_emotion\":\"Narrator\",\"evidence\":[\"swallowed the remainder with an accompaniment of secret tears, forced from me by the exigency of hunger\"],\"explanation\":\"The narrator sheds secret tears while eating their reduced ration due to intense hunger.\",\"confidence\":\"high\"}],\"implicit_meaning\":[{\"claim\":\"The narrator prioritizes compliance and self-sacrifice or submission to social pressure over their own physical comfort.\",\"evidence\":[\"Many a time I have shared between two claimants the precious morsel of brown bread distributed at tea-time; and after relinquishing to a third half the contents of my mug of coffee\"],\"confidence\":\"medium\"},{\"claim\":\"The institutional care provided at Lowood falls below the basic needs required for healthy child development.\",\"evidence\":[\"Our clothing was insufficient to protect us from the severe cold\",\"we had scarcely sufficient to keep alive a delicate invalid\"],\"confidence\":\"high\"}],\"scene\":{\"setting\":\"Lowood, specifically within the garden walls, open air, and indoors during tea-time in winter (January, February, and part of March).\",\"atmosphere\":\"Grim, harsh, and uncomfortable.\",\"visual_details\":[\"Deep snows and impassable roads beyond the garden walls\",\"Numbed, ungloved hands and feet covered with chilblains\",\"Swelled, raw, and stiff toes\",\"Morsel of brown bread and a mug of coffee at tea-time\"]},\"uncertainties\":[\"The exact geographical location of Lowood beyond its name\",\"The specific identity, name, or age of the narrator\",\"The total number of students at Lowood\",\"What specific church they attend outside the garden walls\"]}"}, {"row": 6, "excerptId": "JE005", "model": "Claude", "raw": "{\n  \"summary\": \"A first-person narrator looks back on her first quarter at Lowood, which felt very long and was marked by difficulty adjusting to new rules and tasks. She describes the hardships of winter: confinement within the garden walls, insufficient clothing, painful chilblained hands and feet, and scanty food. Hunger led the older girls to take food from the younger pupils, and the narrator describes sharing her bread and coffee with others and crying secretly from hunger.\",\n  \"characters\": [\n    {\"name\": \"Narrator (\\\"I\\\")\", \"role\": \"A pupil at Lowood recounting her first quarter there; one of the younger pupils who shares her food and suffers cold and hunger\"},\n    {\"name\": \"The younger pupils (\\\"the little ones\\\")\", \"role\": \"Pupils who are pressured by older girls to give up their food portions\"},\n    {\"name\": \"The \\\"great girls\\\" (older pupils)\", \"role\": \"Famished older pupils who coax or menace younger ones out of their food\"},\n    {\"name\": \"\\\"Two claimants\\\" and \\\"a third\\\"\", \"role\": \"Unnamed pupils with whom the narrator shares her bread and coffee\"}\n  ],\n  \"emotions\": [\n    {\n      \"emotion\": \"Anxiety / fear of failure\",\n      \"whose_emotion\": \"Narrator\",\n      \"evidence\": [\"The fear of failure in these points harassed me worse than the physical hardships\"],\n      \"explanation\": \"The narrator states that fear of failing at new rules and tasks tormented her more than the physical hardships, which makes it her dominant stated distress.\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"emotion\": \"Distress and irritation from physical suffering\",\n      \"whose_emotion\": \"Narrator\",\n      \"evidence\": [\"the distracting irritation I endured\", \"the torture of thrusting the swelled, raw, and stiff toes into my shoes\"],\n      \"explanation\": \"The narrator uses strong words (\\\"irritation,\\\" \\\"torture\\\") to describe the pain of chilblained feet, showing intense physical and emotional discomfort.\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"emotion\": \"Hunger-driven misery and grief\",\n      \"whose_emotion\": \"Narrator\",\n      \"evidence\": [\"secret tears, forced from me by the exigency of hunger\"],\n      \"explanation\": \"The narrator explicitly links her crying to hunger, and the word \\\"secret\\\" suggests she hides this distress from others.\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"emotion\": \"Weariness / sense of prolonged hardship\",\n      \"whose_emotion\": \"Narrator\",\n      \"evidence\": [\"seemed an age; and not the golden age either\"],\n      \"explanation\": \"The narrator says the first quarter felt very long and unpleasant, contrasting it with a happy \\\"golden age.\\\"\",\n      \"confidence\": \"medium\"\n    },\n    {\n      \"emotion\": \"Desperation / need\",\n      \"whose_emotion\": \"Other pupils (older girls)\",\n      \"evidence\": [\"the famished great girls\", \"coax or menace the little ones\"],\n      \"explanation\": \"The older girls' hunger is described as severe enough that they resort to coaxing or threatening younger pupils for food. The excerpt reports the behavior and hunger but does not directly state their feelings.\",\n      \"confidence\": \"low\"\n    }\n  ],\n  \"implicit_meaning\": [\n    {\n      \"claim\": \"The institution's provision of food and clothing is inadequate, and this scarcity produces unfair social dynamics among pupils.\",\n      \"evidence\": [\"Our clothing was insufficient to protect us\", \"From this deficiency of nourishment resulted an abuse\"],\n      \"confidence\": \"high\"\n    },\n    {\n      \"claim\": \"The narrator shows some generosity or compassion despite her own hunger, though the excerpt does not state her motive.\",\n      \"evidence\": [\"Many a time I have shared between two claimants the precious morsel of brown bread\"],\n      \"confidence\": \"medium\"\n    },\n    {\n      \"claim\": \"The narrator may feel unable to refuse or resist the demands made on her, or may feel obliged to give; the excerpt does not clarify which.\",\n      \"evidence\": [\"after relinquishing to a third half the contents of my mug of coffee\"],\n      \"confidence\": \"low\"\n    },\n    {\n      \"claim\": \"The narrator concealed her suffering from others, suggesting a reluctance or inability to show vulnerability.\",\n      \"evidence\": [\"secret tears\"],\n      \"confidence\": \"medium\"\n    },\n    {\n      \"claim\": \"The narrator's retrospective, detailed account suggests these experiences left a lasting impression.\",\n      \"evidence\": [\"I remember well the distracting irritation I endured\"],\n      \"confidence\": \"medium\"\n    }\n  ],\n  \"scene\": {\n    \"setting\": \"Lowood, a school with a garden enclosed by walls, in winter and early spring (January to part of March), with deep snow followed by almost impassable roads. Pupils go to church and spend an hour daily outdoors within the garden walls. Meals include tea-time with brown bread and coffee.\",\n    \"atmosphere\": \"Bleak, cold, and deprived, marked by scarcity, confinement, and quiet suffering.\",\n    \"visual_details\": [\n      \"deep snows, then almost impassable roads\",\n      \"garden walls\",\n      \"ungloved hands numbed and covered with chilblains\",\n      \"swelled, raw, and stiff toes\",\n      \"snow melting inside shoes\",\n      \"a morsel of brown bread and a mug of coffee\"\n    ]\n  },\n  \"uncertainties\": [\n    \"The excerpt does not name the narrator, the school's staff, or any other individuals.\",\n    \"The narrator's age is not stated, though she is evidently among the younger pupils or at least not among the \\\"great girls.\\\"\",\n    \"It is unclear whether the school's inadequate provisions are deliberate policy, neglect, or lack of resources.\",\n    \"The narrator's motive for sharing food (kindness, fear, pressure) is not stated.\",\n    \"The excerpt does not say whether the narrator herself was ever threatened by the older girls or only observed or yielded to requests.\",\n    \"The tone toward the school and its authorities cannot be established beyond the factual description of hardship.\",\n    \"The excerpt does not describe the new rules or tasks she struggled with, so the nature of her fear of failure is unspecified.\"\n  ]\n}"}, {"row": 7, "excerptId": "JE005", "model": "DeepSeek", "raw": "{\n  \"summary\": \"The narrator describes her first quarter at Lowood as a difficult period of adjustment to new rules and tasks, marked by fear of failure. She recounts the physical hardships of winter: insufficient clothing, no boots, frozen and chilblained hands and feet, scanty food, and older hungry girls taking food from younger pupils. She describes sharing her own small portions of bread and coffee and crying secretly from hunger.\",\n  \"characters\": [\n    {\"name\": \"Narrator (first-person 'I')\", \"role\": \"Pupil at Lowood recounting her first quarter, enduring cold and hunger and sharing her food with others\"},\n    {\"name\": \"The 'great girls'\", \"role\": \"Older, famished pupils who coax or menace the little ones out of their food portions\"},\n    {\"name\": \"The 'little ones' / younger pupils\", \"role\": \"Younger pupils whose portions are taken by the older girls\"},\n    {\"name\": \"Two claimants\", \"role\": \"Recipients between whom the narrator shares her brown bread at tea-time\"},\n    {\"name\": \"A third\", \"role\": \"Recipient to whom the narrator relinquishes half her mug of coffee\"}\n  ],\n  \"emotions\": [\n    {\n      \"emotion\": \"Fear of failure\",\n      \"whose_emotion\": \"Narrator\",\n      \"evidence\": [\"The fear of failure in these points harassed me worse than the physical hardships of my lot\"],\n      \"explanation\": \"The narrator explicitly states that fear of failure in habituating herself to new rules and tasks harassed her more than physical hardships.\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"emotion\": \"Distress / irritation from physical suffering\",\n      \"whose_emotion\": \"Narrator\",\n      \"evidence\": [\"I remember well the distracting irritation I endured from this cause every evening, when my feet inflamed\", \"the torture of thrusting the swelled, raw, and stiff toes into my shoes in the morning\"],\n      \"explanation\": \"The narrator directly describes enduring distracting irritation and torture from her chilblained feet.\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"emotion\": \"Distress about scanty food\",\n      \"whose_emotion\": \"Narrator (describing the pupils' condition)\",\n      \"evidence\": [\"the scanty supply of food was distressing\"],\n      \"explanation\": \"The narrator explicitly labels the scanty food supply as distressing.\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"emotion\": \"Secret sadness / tears from hunger\",\n      \"whose_emotion\": \"Narrator\",\n      \"evidence\": [\"I have swallowed the remainder with an accompaniment of secret tears, forced from me by the exigency of hunger\"],\n      \"explanation\": \"The narrator directly reports swallowing her remaining coffee with secret tears forced by hunger.\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"emotion\": \"Irksome struggle\",\n      \"whose_emotion\": \"Narrator\",\n      \"evidence\": [\"it comprised an irksome struggle with difficulties in habituating myself to new rules and unwonted tasks\"],\n      \"explanation\": \"The narrator characterizes her adjustment as an irksome struggle with difficulties.\",\n      \"confidence\": \"high\"\n    }\n  ],\n  \"implicit_meaning\": [\n    {\n      \"claim\": \"The narrator's fear of failure weighed on her more than her physical suffering.\",\n      \"evidence\": [\"The fear of failure in these points harassed me worse than the physical hardships of my lot\"],\n      \"confidence\": \"high\"\n    },\n    {\n      \"claim\": \"The narrator willingly gave up part of her already insufficient food to others despite her own hunger.\",\n      \"evidence\": [\"Many a time I have shared between two claimants the precious morsel of brown bread\", \"after relinquishing to a third half the contents of my mug of coffee, I have swallowed the remainder with an accompaniment of secret tears\"],\n      \"confidence\": \"high\"\n    },\n    {\n      \"claim\": \"The narrator kept her hunger-driven tears hidden from others.\",\n      \"evidence\": [\"secret tears\"],\n      \"confidence\": \"medium\"\n    },\n    {\n      \"claim\": \"The older girls' taking of food from younger pupils resulted from the deficiency of nourishment.\",\n      \"evidence\": [\"From this deficiency of nourishment resulted an abuse, which pressed hardly on the younger pupils\", \"whenever the famished great girls had an opportunity, they would coax or menace the little ones out of their portion\"],\n      \"confidence\": \"high\"\n    },\n    {\n      \"claim\": \"The narrator's account emphasizes hardship endured with some restraint rather than open complaint.\",\n      \"evidence\": [\"I remember well the distracting irritation I endured\", \"secret tears\"],\n      \"confidence\": \"low\"\n    }\n  ],\n  \"scene\": {\n    \"setting\": \"Lowood, during January, February, and part of March; deep snows and then almost impassable roads; the pupils are confined within the garden walls except to go to church, and must pass an hour every day in the open air.\",\n    \"atmosphere\": \"Cold, harsh, deprived, and physically distressing\",\n    \"visual_details\": [\n      \"deep snows\",\n      \"almost impassable roads\",\n      \"garden walls\",\n      \"no boots\",\n      \"snow got into the shoes and melted there\",\n      \"ungloved hands became numbed and covered with chilblains\",\n      \"swelled, raw, and stiff toes\",\n      \"the precious morsel of brown bread distributed at tea-time\",\n      \"mug of coffee\"\n    ]\n  },\n  \"uncertainties\": [\n    \"The narrator's name and age are not given in the excerpt.\",\n    \"The exact location of Lowood beyond the name is not described.\",\n    \"The number of pupils and the identities of the 'great girls', 'little ones', 'two claimants', and 'a third' are not specified.\",\n    \"It is unclear whether the narrator's sharing of food was voluntary generosity, social pressure, or both.\",\n    \"The narrator's physical appearance is not described.\",\n    \"Whether the narrator's 'secret tears' were witnessed by anyone is not stated.\"\n  ]\n}"}, {"row": 8, "excerptId": "HM002", "model": "Gemini", "raw": "{\"summary\": \"A speaker, addressing Hamlet, reveals that while sleeping in his orchard in the afternoon, his brother poured poisonous 'hebenon' into his ears, killing him and stripping him of his life, crown, and queen. The speaker recounts how his brother seduced his queen, urges Hamlet not to let the royal bed of Denmark remain incestuous, instructs Hamlet not to harm his mother, and departs as morning approaches.\", \"characters\": [{\"name\": \"Speaker / Narrator\", \"role\": \"Deceased former ruler, husband of the queen, brother of the killer, and father/figure addressing Hamlet\"}, {\"name\": \"Hamlet\", \"role\": \"Addressee, urged by the speaker to take action regarding Denmark's throne/bed while sparing his mother\"}, {\"name\": \"The brother / uncle\", \"role\": \"Killer of the speaker; seduced the queen using wit and gifts, and poured poison into the speaker's ears while he slept\"}, {\"name\": \"The queen / mother\", \"role\": \"Wife of the speaker who was seduced by the brother/uncle\"}], \"emotions\": [{\"emotion\": \"Anger and disgust\", \"whose_emotion\": \"Narrator\", \"evidence\": [\"incestuous, that adulterate beast\", \"vile and loathsome crust\"], \"explanation\": \"The narrator uses severe pejorative terms and visceral language to describe the brother and the physical effects of the poison.\", \"confidence\": \"high\"}, {\"emotion\": \"Grief and horror\", \"whose_emotion\": \"Narrator\", \"evidence\": [\"O Hamlet, what a falling off was there\", \"O horrible! O horrible! most horrible!\"], \"explanation\": \"The explicit exclamations of horror and sadness highlight the speaker's emotional distress regarding his betrayal, death, and lack of last rites.\", \"confidence\": \"high\"}, {\"emotion\": \"Pride\", \"whose_emotion\": \"Narrator\", \"evidence\": [\"whose love was of that dignity\", \"natural gifts were poor / To those of mine\"], \"explanation\": \"The speaker contrasts his own dignity and noble qualities with those of his brother.\", \"confidence\": \"high\"}], \"implicit_meaning\": [{\"claim\": \"The speaker died suddenly without receiving final religious rites or pre-death confession.\", \"evidence\": [\"Unhous’led, disappointed, unanel’d;\", \"No reckoning made, but sent to my account / With all my imperfections on my head.\"], \"confidence\": \"high\"}, {\"claim\": \"The queen's conscience or internal guilt will torment her without Hamlet needing to seek physical revenge against her.\", \"evidence\": [\"leave her to heaven, / And to those thorns that in her bosom lodge, / To prick and sting her.\"], \"confidence\": \"high\"}], \"scene\": {\"setting\": \"An orchard (recollected location of murder); current location is outdoors as dawn/morning approaches ('glow-worm shows the matin to be near').\", \"atmosphere\": \"Urgent, solemn, spectral, and tense.\", \"visual_details\": [\"Morning light beginning to approach as indicated by the fading glow-worm ('’gins to pale his uneffectual fire')\", \"Visual effect of the poison leaving a 'vile and loathsome crust' like bark or leprosy over the body\"]}, \"uncertainties\": [\"The precise nature or real-world identity of the substance called 'hebenon'.\", \"The physical form or nature of the speaker (e.g., whether a ghost, spirit, or apparition) beyond his spoken words.\", \"The exact relationship of Hamlet to the speaker, other than Hamlet being addressed and the killer being referred to as 'thy uncle'.\"]}"}, {"row": 9, "excerptId": "HM002", "model": "Claude", "raw": "{\n  \"summary\": \"A speaker addresses 'Hamlet' and denounces a man he calls 'thy uncle' and 'a brother's hand', accusing him of seducing the speaker's queen. He describes being killed while sleeping in his orchard, when poison was poured into his ears, and says he was cut off from life, crown and queen without having made peace for his sins. He urges Hamlet not to let the royal bed remain 'a couch for luxury and damned incest', warns him not to harm his mother and to 'leave her to heaven', then takes leave as morning approaches, ending with 'Remember me.'\",\n  \"characters\": [\n    {\"name\": \"The speaker (the wronged husband and king)\", \"role\": \"Narrates his own murder and betrayal; refers to 'my most seeming-virtuous queen' and 'the royal bed of Denmark', and says he lost 'life, crown, queen'. His exact identity is not named in the excerpt.\"},\n    {\"name\": \"Hamlet\", \"role\": \"The person addressed ('O Hamlet'); the listener who is asked to avenge or act and to 'Remember me'. Relationship to the speaker is implied but not stated outright.\"},\n    {\"name\": \"The queen\", \"role\": \"The speaker's wife, described as seduced; also called 'thy mother' by the speaker, which establishes her as Hamlet's mother.\"},\n    {\"name\": \"The uncle / brother\", \"role\": \"The man who seduced the queen and killed the speaker; called 'that incestuous, that adulterate beast', 'thy uncle' and 'a brother's hand'.\"}\n  ],\n  \"emotions\": [\n    {\n      \"emotion\": \"Rage and contempt\",\n      \"whose_emotion\": \"Speaker\",\n      \"evidence\": [\"that incestuous, that adulterate beast\", \"a wretch whose natural gifts were poor\"],\n      \"explanation\": \"The speaker uses abusive, degrading terms for the man who wronged him and belittles his qualities, which expresses anger and scorn.\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"emotion\": \"Sense of betrayal and wounded pride in his love\",\n      \"whose_emotion\": \"Speaker\",\n      \"evidence\": [\"what a falling off was there\", \"my most seeming-virtuous queen\"],\n      \"explanation\": \"He laments the decline of the queen's loyalty from his own faithful love, and 'seeming-virtuous' suggests he feels deceived by her apparent virtue.\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"emotion\": \"Horror at his own death\",\n      \"whose_emotion\": \"Speaker\",\n      \"evidence\": [\"O horrible! O horrible! most horrible!\"],\n      \"explanation\": \"The repeated, escalating exclamation conveys the speaker's revulsion at what was done to him, following his account of the poisoning.\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"emotion\": \"Anguish or grievance over dying unprepared\",\n      \"whose_emotion\": \"Speaker\",\n      \"evidence\": [\"No reckoning made, but sent to my account\", \"Unhous’led, disappointed, unanel’d\"],\n      \"explanation\": \"He stresses that he was sent to judgment without the final rites or any chance to settle his sins, presenting this as a further wrong.\",\n      \"confidence\": \"medium\"\n    },\n    {\n      \"emotion\": \"Moral disgust at the marriage\",\n      \"whose_emotion\": \"Speaker\",\n      \"evidence\": [\"damned incest\", \"prey on garbage\"],\n      \"explanation\": \"The speaker frames the queen's new union as degraded and sinful, using language of filth and damnation.\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"emotion\": \"Urgency and a sense of time running out\",\n      \"whose_emotion\": \"Speaker\",\n      \"evidence\": [\"Brief let me be\", \"Fare thee well at once!\"],\n      \"explanation\": \"The speaker hurries his account as morning nears and breaks off abruptly, indicating pressure of time.\",\n      \"confidence\": \"medium\"\n    },\n    {\n      \"emotion\": \"Residual concern or restraint regarding the queen\",\n      \"whose_emotion\": \"Speaker\",\n      \"evidence\": [\"leave her to heaven\", \"To prick and sting her\"],\n      \"explanation\": \"He tells Hamlet not to act against his mother and leaves her punishment to heaven and her own conscience; this suggests some restraint, though the thorns image also implies he expects her to suffer.\",\n      \"confidence\": \"medium\"\n    },\n    {\n      \"emotion\": \"Solemn, haunted farewell\",\n      \"whose_emotion\": \"Atmosphere\",\n      \"evidence\": [\"The glow-worm shows the matin to be near\", \"Adieu, adieu, adieu. Remember me.\"],\n      \"explanation\": \"The fading light and the thrice-repeated farewell give the closing a mournful, urgent tone distinct from the speaker's anger.\",\n      \"confidence\": \"medium\"\n    }\n  ],\n  \"implicit_meaning\": [\n    {\n      \"claim\": \"The speaker expects Hamlet to take action against the murderer, though he does not state a specific command to kill.\",\n      \"evidence\": [\"If thou hast nature in thee, bear it not\", \"Remember me.\"],\n      \"confidence\": \"medium\"\n    },\n    {\n      \"claim\": \"The speaker is not alive in the ordinary sense; he describes his death in the past tense and takes leave at dawn, which suggests a supernatural or ghostly presence. The excerpt does not say this explicitly.\",\n      \"evidence\": [\"Cut off even in the blossoms of my sin\", \"Fare thee well at once!\"],\n      \"confidence\": \"low\"\n    },\n    {\n      \"claim\": \"The speaker considers his death spiritually costly, implying he believes he may be suffering for unconfessed sins.\",\n      \"evidence\": [\"With all my imperfections on my head\", \"Unhous’led, disappointed, unanel’d\"],\n      \"confidence\": \"medium\"\n    },\n    {\n      \"claim\": \"The speaker sees the queen's fall as proof that lust can corrupt even a seemingly virtuous person, presenting her as seduced rather than simply wicked.\",\n      \"evidence\": [\"won to his shameful lust\", \"lust, though to a radiant angel link’d\"],\n      \"confidence\": \"medium\"\n    },\n    {\n      \"claim\": \"The usurpation of royal power matters to the speaker alongside the personal betrayal.\",\n      \"evidence\": [\"Of life, of crown, of queen at once dispatch’d\"],\n      \"confidence\": \"medium\"\n    },\n    {\n      \"claim\": \"The speaker wants Hamlet to keep his own mind and soul uncorrupted while acting.\",\n      \"evidence\": [\"Taint not thy mind, nor let thy soul contrive\"],\n      \"confidence\": \"medium\"\n    }\n  ],\n  \"scene\": {\n    \"setting\": \"Reported past setting: an orchard in the afternoon where the speaker slept. Present setting: not explicitly described, but it is near dawn ('methinks I scent the morning air') and the speaker addresses Hamlet. 'The royal bed of Denmark' places the matter in a Danish royal context.\",\n    \"atmosphere\": \"Grave, urgent, and ominous, with a mood of dread and impending daybreak. The tone shifts from furious accusation to graphic horror to a hushed, hurried farewell.\",\n    \"visual_details\": [\n      \"The approaching morning: 'The glow-worm shows the matin to be near' and its 'uneffectual fire' paling\",\n      \"The orchard where the speaker slept in the afternoon (past event)\",\n      \"The speaker's body after the poisoning: 'vile and loathsome crust' covering 'All my smooth body' (described as a past effect)\",\n      \"The poison in a 'vial', poured into the ears (past event)\"\n    ]\n  },\n  \"uncertainties\": [\n    \"The excerpt does not name the speaker; his identity as king is inferred from references to 'crown', 'queen' and 'royal bed'.\",\n    \"The relationship between speaker and Hamlet (e.g. father and son) is not explicitly stated; it is only implied by 'thy uncle', 'thy mother' and the address 'O Hamlet'.\",\n    \"The nature of the speaker's presence (ghost, spirit, vision) is not stated, and the physical setting of this encounter is not described.\",\n    \"It is unclear whether the speaker explicitly demands vengeance; the excerpt gives a warning, a prohibition and a plea to remember, but no direct command to kill.\",\n    \"The queen's degree of guilt, including whether she knew of or took part in the murder, cannot be determined from the excerpt.\",\n    \"The reliability of the speaker's account cannot be checked from the excerpt alone.\",\n    \"The meaning of 'sin' in 'blossoms of my sin' is not specified.\"\n  ]\n}"}, {"row": 10, "excerptId": "HM002", "model": "DeepSeek", "raw": "{\n  \"summary\": \"A speaker (later implied to be a ghost) describes being murdered by his brother, who poured poison into his ears while he slept in his orchard, and who had also seduced his wife. The speaker urges the listener, called 'Hamlet,' to remember him, to act against the brother but not against the mother, and then departs as morning approaches.\",\n  \"characters\": [\n    {\"name\": \"Speaker (implied ghost of Hamlet's father)\", \"role\": \"Victim who narrates his murder and betrayal; urges Hamlet to remember and act\"},\n    {\"name\": \"Hamlet\", \"role\": \"Listener addressed by the speaker, urged to 'Remember me' and to bear the wrongs\"},\n    {\"name\": \"Brother/uncle\", \"role\": \"Murderer who poured poison into the speaker's ears and took life, crown, and queen\"},\n    {\"name\": \"Queen/mother\", \"role\": \"The speaker's wife, described as having her will 'won' by the brother; to be left to heaven\"}\n  ],\n  \"emotions\": [\n    {\n      \"emotion\": \"horror and outrage\",\n      \"whose_emotion\": \"speaker\",\n      \"evidence\": [\"O horrible! O horrible! most horrible!\"],\n      \"explanation\": \"The repeated exclamation directly expresses the speaker's revulsion at the murder and betrayal described.\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"emotion\": \"grief and sense of loss\",\n      \"whose_emotion\": \"speaker\",\n      \"evidence\": [\"O Hamlet, what a falling off was there\"],\n      \"explanation\": \"The lament addressed to Hamlet marks sorrow over the decline from the speaker's dignified love to the queen's union with a 'wretch.'\",\n      \"confidence\": \"medium\"\n    },\n    {\n      \"emotion\": \"anger and condemnation\",\n      \"whose_emotion\": \"speaker\",\n      \"evidence\": [\"that incestuous, that adulterate beast\", \"O wicked wit, and gifts, that have the power / So to seduce!\"],\n      \"explanation\": \"The speaker labels the brother with harsh terms and condemns the wit and gifts that enabled seduction, indicating anger.\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"emotion\": \"urgency and concern\",\n      \"whose_emotion\": \"speaker\",\n      \"evidence\": [\"But soft! methinks I scent the morning air; / Brief let me be.\", \"Fare thee well at once!\"],\n      \"explanation\": \"The speaker notes the approaching morning and hastens to conclude, showing urgency and concern about time.\",\n      \"confidence\": \"medium\"\n    }\n  ],\n  \"implicit_meaning\": [\n    {\n      \"claim\": \"The speaker believes the brother's gifts were inferior to his own and that the queen's choice represents a moral decline.\",\n      \"evidence\": [\"to decline / Upon a wretch whose natural gifts were poor / To those of mine\"],\n      \"confidence\": \"high\"\n    },\n    {\n      \"claim\": \"The speaker presents lust as inevitably turning from a 'celestial bed' to 'garbage,' implying the queen's new union is degraded.\",\n      \"evidence\": [\"So lust, though to a radiant angel link’d, / Will sate itself in a celestial bed / And prey on garbage.\"],\n      \"confidence\": \"medium\"\n    },\n    {\n      \"claim\": \"The speaker wants Hamlet to remember the murder and betrayal but to restrain himself from acting against his mother.\",\n      \"evidence\": [\"If thou hast nature in thee, bear it not\", \"Taint not thy mind, nor let thy soul contrive / Against thy mother aught\"],\n      \"confidence\": \"high\"\n    },\n    {\n      \"claim\": \"The speaker died unprepared for death, which he presents as an additional horror.\",\n      \"evidence\": [\"Unhous’led, disappointed, unanel’d; / No reckoning made, but sent to my account / With all my imperfections on my head.\"],\n      \"confidence\": \"high\"\n    }\n  ],\n  \"scene\": {\n    \"setting\": \"An orchard where the speaker slept in the afternoon; morning is approaching as the speaker departs.\",\n    \"atmosphere\": \"Dark, accusatory, and urgent, with horror at murder and betrayal and a sense of impending dawn.\",\n    \"visual_details\": [\n      \"Sleeping within an orchard\",\n      \"Juice of cursed hebenon in a vial poured into the porches of the ears\",\n      \"A tetter barking about the body like a loathsome crust\",\n      \"The glow-worm showing the matin to be near\"\n    ]\n  },\n  \"uncertainties\": [\n    \"The excerpt does not explicitly identify the speaker as a ghost, though the address to Hamlet and the murder narration imply it.\",\n    \"The excerpt does not state whether Hamlet is the speaker's son, though the name and context suggest it.\",\n    \"The queen's own feelings and knowledge are not established; only the speaker's characterization of her is given.\",\n    \"The exact nature of the 'gifts' and 'wit' used to seduce the queen is not specified.\",\n    \"It is unclear whether the speaker's commands are obeyed or how Hamlet reacts.\"\n  ]\n}"}, {"row": 11, "excerptId": "AW009", "model": "Gemini", "raw": "{\n\"summary\": \"Alice approaches a table in front of a house where the March Hare, the Hatter, and a sleeping Dormouse are having tea crowded at one corner. Despite their initial claims of no room, Alice sits down. A contentious conversation follows where the March Hare offers non-existent wine, leading to a debate over politeness, followed by personal remarks and logic/wordplay riddles initiated by the Hatter and March Hare.\",\n\"characters\": [\n{\n\"name\": \"Alice\",\n\"role\": \"A visitor who joins the tea party and engages in conversation with the March Hare and the Hatter\"\n},\n{\n\"name\": \"March Hare\",\n\"role\": \"A tea party host/participant who offers non-existent wine and challenges Alice's speech and presence\"\n},\n{\n\"name\": \"Hatter\",\n\"role\": \"A tea party participant who observes Alice, makes a personal remark, asks a riddle, and engages in wordplay arguments\"\n},\n{\n\"name\": \"Dormouse\",\n\"role\": \"A tea party participant who is fast asleep between the Hatter and the March Hare, serving as a cushion\"\n}\n],\n\"emotions\": [\n{\n\"emotion\": \"Empathy / Concern\",\n\"whose_emotion\": \"Alice\",\n\"evidence\": [\n\"Very uncomfortable for the Dormouse\"\n],\n\"explanation\": \"Alice sympathizes with the sleeping Dormouse being used as a cushion by the other two.\",\n\"confidence\": \"high\"\n},\n{\n\"emotion\": \"Indignation\",\n\"whose_emotion\": \"Alice\",\n\"evidence\": [\n\"said Alice indignantly\"\n],\n\"explanation\": \"Alice reacts with indignation to the claim that there is 'No room!' at the large table.\",\n\"confidence\": \"high\"\n},\n{\n\"emotion\": \"Encouragement (Tone)\",\n\"whose_emotion\": \"March Hare\",\n\"evidence\": [\n\"in an encouraging tone\"\n],\n\"explanation\": \"The text explicitly describes the March Hare's tone when offering wine as encouraging, though the offer itself is deceptive.\",\n\"confidence\": \"high\"\n},\n{\n\"emotion\": \"Anger\",\n\"whose_emotion\": \"Alice\",\n\"evidence\": [\n\"said Alice angrily\"\n],\n\"explanation\": \"Alice feels angry after realizing the March Hare offered her wine when there was none.\",\n\"confidence\": \"high\"\n},\n{\n\"emotion\": \"Curiosity\",\n\"whose_emotion\": \"Hatter\",\n\"evidence\": [\n\"looking at Alice for some time with great curiosity\"\n],\n\"explanation\": \"The text explicitly states the Hatter looks at Alice with great curiosity before speaking.\",\n\"confidence\": \"high\"\n},\n{\n\"emotion\": \"Severity / Sternness\",\n\"whose_emotion\": \"Alice\",\n\"evidence\": [\n\"Alice said with some severity\"\n],\n\"explanation\": \"Alice adopts a stern/severe tone to admonish the Hatter for his personal remark about her hair.\",\n\"confidence\": \"high\"\n},\n{\n\"emotion\": \"Surprise / Astonishment\",\n\"whose_emotion\": \"Hatter\",\n\"evidence\": [\n\"opened his eyes very wide on hearing this\"\n],\n\"explanation\": \"Opening eyes very wide indicates surprise or reaction to Alice's reprimand about personal remarks.\",\n\"confidence\": \"medium\"\n},\n{\n\"emotion\": \"Amusement / Pleasure\",\n\"whose_emotion\": \"Alice\",\n\"evidence\": [\n\"Come, we shall have some fun now!\",\n\"I'm glad they've begun asking riddles.\"\n],\n\"explanation\": \"Alice thinks to herself that she is pleased and looks forward to fun when the Hatter asks a riddle.\",\n\"confidence\": \"high\"\n}\n],\n\"implicit_meaning\": [\n{\n\"claim\": \"The Hatter and March Hare engage in deliberately contrarian, teasing, or antagonistic banter to challenge Alice's social norms and logic.\",\n\"evidence\": [\n\"There isn't any\",\n\"It wasn't very civil of you to sit down without being invited\",\n\"Your hair wants cutting\",\n\"Not the same thing a bit!\"\n],\n\"confidence\": \"high\"\n},\n{\n\"claim\": \"The hosts do not genuinely desire Alice's presence at their corner of the table, yet they interact with her once she sits down.\",\n\"evidence\": [\n\"No room! No room!\",\n\"It wasn't very civil of you to sit down without being invited\"\n],\n\"confidence\": \"high\"\n}\n],\n\"scene\": {\n\"setting\": \"Under a tree in front of a house, at a large table laid for a great many people\",\n\"atmosphere\": \"Absurd, argumentative, uncooperative, and linguistically chaotic\",\n\"visual_details\": [\n\"Table set out under a tree in front of the house\",\n\"Dormouse fast asleep between March Hare and Hatter\",\n\"March Hare and Hatter resting elbows on Dormouse\",\n\"Three characters crowded together at one corner of a large table\",\n\"A large arm-chair at one end of the table\",\n\"Only tea present on the table\"\n]\n},\n\"uncertainties\": [\n\"Why the hosts are crowded at one corner when the table is laid for many more.\",\n\"The origin or background of the characters and their relationship with Alice.\",\n\"Whether the Hatter actually knows an answer to the riddle 'Why is a raven like a writing-desk?'.\"\n]\n}"}, {"row": 12, "excerptId": "AW009", "model": "Claude", "raw": "{\n  \"summary\": \"Alice approaches a table under a tree where the March Hare and the Hatter are having tea, with a sleeping Dormouse between them. They cry 'No room!' as she arrives, though the table is large. Alice sits down anyway, and the group trades barbed remarks about civility: the March Hare offers wine that does not exist, the Hatter remarks on Alice's hair, and Alice objects to his rudeness. The Hatter asks a riddle ('Why is a raven like a writing-desk?'), Alice says she can guess it, and the March Hare and the Hatter then argue that 'saying what you mean' and 'meaning what you say' are not the same thing, using two paired examples.\",\n  \"characters\": [\n    {\"name\": \"Alice\", \"role\": \"Newcomer who sits down at the table, is criticized by the others, and argues back; her thoughts are reported in the text\"},\n    {\"name\": \"The March Hare\", \"role\": \"Tea-party participant who offers non-existent wine, tells Alice she sat down uninvited, and challenges her phrasing\"},\n    {\"name\": \"The Hatter\", \"role\": \"Tea-party participant who comments on Alice's hair, asks the raven riddle, and gives a counterexample about meaning and saying\"},\n    {\"name\": \"The Dormouse\", \"role\": \"Fast-asleep figure used by the March Hare and the Hatter as a cushion; does not speak or act\"}\n  ],\n  \"emotions\": [\n    {\n      \"emotion\": \"Indignation\",\n      \"whose_emotion\": \"Alice\",\n      \"evidence\": [\"said Alice indignantly\", \"said Alice angrily\"],\n      \"explanation\": \"The narration directly labels Alice's reactions to the 'No room!' cry and to the offer of wine that is not there as indignant and angry. Both are responses to what she sees as unfair or uncivil treatment.\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"emotion\": \"Disapproval / severity\",\n      \"whose_emotion\": \"Alice\",\n      \"evidence\": [\"Alice said with some severity\", \"it's very rude\"],\n      \"explanation\": \"Alice reprimands the Hatter for his remark about her hair and explicitly calls it rude, showing a stern, corrective stance rather than mere annoyance.\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"emotion\": \"Pleased anticipation\",\n      \"whose_emotion\": \"Alice\",\n      \"evidence\": [\"we shall have some fun now!\", \"I'm glad they've begun asking riddles\"],\n      \"explanation\": \"Alice's private thoughts show she expects enjoyment once riddles begin, and she says she is glad. This is her own stated feeling.\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"emotion\": \"Sympathy tempered by dismissal\",\n      \"whose_emotion\": \"Alice\",\n      \"evidence\": [\"Very uncomfortable for the Dormouse\", \"as it's asleep, I suppose it doesn't mind\"],\n      \"explanation\": \"Alice notes the Dormouse's discomfort but then reasons that its sleep means it does not mind. The sympathy is mild and quickly set aside.\",\n      \"confidence\": \"medium\"\n    },\n    {\n      \"emotion\": \"Curiosity\",\n      \"whose_emotion\": \"The Hatter\",\n      \"evidence\": [\"looking at Alice for some time with great curiosity\"],\n      \"explanation\": \"The narration directly attributes curiosity to the Hatter as he watches Alice before speaking.\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"emotion\": \"Surprise\",\n      \"whose_emotion\": \"The Hatter\",\n      \"evidence\": [\"opened his eyes very wide on hearing this\"],\n      \"explanation\": \"His wide-open eyes in response to Alice's rebuke suggest surprise, though the text does not name the emotion, and he moves on to the riddle without comment.\",\n      \"confidence\": \"low\"\n    },\n    {\n      \"emotion\": \"Flustered defensiveness\",\n      \"whose_emotion\": \"Alice\",\n      \"evidence\": [\"Alice hastily replied\", \"at least--at least I mean what I say\"],\n      \"explanation\": \"Her hasty reply and the self-correcting repetition suggest she is caught off guard by the challenge to her wording and tries to recover quickly.\",\n      \"confidence\": \"medium\"\n    },\n    {\n      \"emotion\": \"Contentiousness / sparring tone\",\n      \"whose_emotion\": \"atmosphere\",\n      \"evidence\": [\"No room! No room!\", \"It wasn't very civil of you to sit down without being invited\"],\n      \"explanation\": \"The repeated exchange of accusations and counter-accusations gives the scene an argumentative, combative quality that is not attributable to a single character.\",\n      \"confidence\": \"medium\"\n    }\n  ],\n  \"implicit_meaning\": [\n    {\n      \"claim\": \"The March Hare and the Hatter are unwelcoming or at least contrary toward Alice, since they declare no room despite abundant space.\",\n      \"evidence\": [\"No room! No room!\", \"The table was a large one\", \"it's laid for a great many more than three\"],\n      \"confidence\": \"high\"\n    },\n    {\n      \"claim\": \"The March Hare's offer of wine is a pretext for scoring a point about civility, since he knowingly offers something that does not exist and then turns the criticism back on Alice.\",\n      \"evidence\": [\"'There isn't any,' said the March Hare.\", \"It wasn't very civil of you to sit down without being invited\"],\n      \"confidence\": \"medium\"\n    },\n    {\n      \"claim\": \"The conversation turns on literal wording: the speakers use precise or reversed phrasing to challenge Alice's claim that saying and meaning are the same.\",\n      \"evidence\": [\"Then you should say what you mean\", \"'I see what I eat' is the same thing as 'I eat what I see'\"],\n      \"confidence\": \"high\"\n    },\n    {\n      \"claim\": \"Alice judges the others by her own standards of politeness and expects them to follow similar rules of conduct.\",\n      \"evidence\": [\"You should learn not to make personal remarks\", \"Then it wasn't very civil of you to offer it\"],\n      \"confidence\": \"medium\"\n    },\n    {\n      \"claim\": \"The Dormouse is treated as an object rather than a participant by the others, and Alice accepts this with little protest.\",\n      \"evidence\": [\"using it as a cushion\", \"I suppose it doesn't mind\"],\n      \"confidence\": \"medium\"\n    },\n    {\n      \"claim\": \"Alice's enthusiasm for riddles may rest on an assumption that the riddle has a straightforward, guessable answer; the text does not show whether this assumption holds.\",\n      \"evidence\": [\"I believe I can guess that\"],\n      \"confidence\": \"low\"\n    }\n  ],\n  \"scene\": {\n    \"setting\": \"A table set out under a tree in front of a house, with a large arm-chair at one end. The table holds tea and is described as laid for many more than three.\",\n    \"atmosphere\": \"Quarrelsome and puzzling, with a playful undercurrent of wordplay; the sleeping Dormouse adds an incongruous, languid note. This is the mood of the scene as a whole, distinct from Alice's indignation and later pleasure.\",\n    \"visual_details\": [\n      \"Table under a tree in front of the house\",\n      \"Table is large, but the three are crowded together at one corner\",\n      \"The Dormouse sits between the March Hare and the Hatter, asleep, with their elbows resting on it\",\n      \"Alice sits in a large arm-chair at one end of the table\",\n      \"Nothing is on the table but tea\",\n      \"The Hatter's eyes open very wide at Alice's rebuke\"\n    ]\n  },\n  \"uncertainties\": [\n    \"Whether the March Hare and the Hatter are deliberately rude or simply behave eccentrically cannot be established; the excerpt gives only their words and some narration.\",\n    \"The answer to the riddle 'Why is a raven like a writing-desk?' is not given, so whether it has one is unknown.\",\n    \"The Hatter's internal motives for his remark about Alice's hair are not stated beyond his 'great curiosity'.\",\n    \"Whether the Dormouse is actually uncomfortable is not known; only Alice's supposition that it does not mind is given.\",\n    \"The identity of the house's owner and why the table is laid for many is not explained in the excerpt.\",\n    \"The excerpt does not establish how Alice's emotions evolve after the final exchange.\"\n  ]\n}"}, {"row": 13, "excerptId": "AW009", "model": "DeepSeek", "raw": "{\n  \"summary\": \"Alice approaches a table under a tree where the March Hare and the Hatter are having tea, using a sleeping Dormouse as a cushion. They cry 'No room!' but Alice sits down indignantly, noting there is plenty of room. The March Hare offers wine that does not exist, and when Alice objects, he criticizes her for sitting down uninvited. The Hatter makes a personal remark about Alice's hair, then poses a riddle about a raven and a writing-desk. Alice is pleased at the prospect of riddles, but the conversation turns into wordplay about saying what one means and meaning what one says.\",\n  \"characters\": [\n    {\"name\": \"Alice\", \"role\": \"A visitor who sits down at the tea table and engages in conversation with the March Hare and the Hatter\"},\n    {\"name\": \"March Hare\", \"role\": \"One of two characters having tea at the table; offers wine, cries 'No room!', and engages in wordplay\"},\n    {\"name\": \"Hatter\", \"role\": \"One of two characters having tea at the table; makes a personal remark about Alice's hair and asks a riddle\"},\n    {\"name\": \"Dormouse\", \"role\": \"A sleeping creature sitting between the March Hare and the Hatter, used by them as a cushion\"}\n  ],\n  \"emotions\": [\n    {\n      \"emotion\": \"indignation\",\n      \"whose_emotion\": \"character\",\n      \"evidence\": [\"said Alice indignantly\"],\n      \"explanation\": \"The excerpt explicitly labels Alice's response as indignant when she says 'There's plenty of room!' and sits down.\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"emotion\": \"anger\",\n      \"whose_emotion\": \"character\",\n      \"evidence\": [\"said Alice angrily\"],\n      \"explanation\": \"The excerpt explicitly states Alice spoke angrily when she says it was not civil to offer wine that does not exist.\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"emotion\": \"severity / disapproval\",\n      \"whose_emotion\": \"character\",\n      \"evidence\": [\"Alice said with some severity\"],\n      \"explanation\": \"The excerpt explicitly describes Alice's tone as severe when she tells the Hatter not to make personal remarks.\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"emotion\": \"gladness / anticipation\",\n      \"whose_emotion\": \"character\",\n      \"evidence\": [\"'Come, we shall have some fun now!' thought Alice. 'I'm glad they've begun asking riddles.'\"],\n      \"explanation\": \"Alice's internal thought explicitly expresses gladness and anticipation about riddles.\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"emotion\": \"curiosity\",\n      \"whose_emotion\": \"character\",\n      \"evidence\": [\"He had been looking at Alice for some time with great curiosity\"],\n      \"explanation\": \"The excerpt explicitly attributes great curiosity to the Hatter as he looks at Alice.\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"emotion\": \"discomfort\",\n      \"whose_emotion\": \"character\",\n      \"evidence\": [\"'Very uncomfortable for the Dormouse,' thought Alice\"],\n      \"explanation\": \"Alice thinks the situation is uncomfortable for the Dormouse; this is Alice's assessment, not necessarily the Dormouse's felt emotion.\",\n      \"confidence\": \"medium\"\n    }\n  ],\n  \"implicit_meaning\": [\n    {\n      \"claim\": \"The March Hare and the Hatter are unwelcoming or deliberately contrary toward Alice.\",\n      \"evidence\": [\"'No room! No room!' they cried out when they saw Alice coming.\"],\n      \"explanation\": \"Their cry of 'No room!' despite a large table with plenty of space suggests deliberate unwelcoming behavior, though their motive is not stated.\",\n      \"confidence\": \"medium\"\n    },\n    {\n      \"claim\": \"The tea party conversation is characterized by illogical or nonsensical exchanges rather than cooperative discussion.\",\n      \"evidence\": [\"'There isn't any,' said the March Hare.\", \"'Why is a raven like a writing-desk?'\"],\n      \"explanation\": \"Offering nonexistent wine and posing an unexplained riddle support an inference that the conversation is playful or absurd, though the excerpt does not state the intent.\",\n      \"confidence\": \"medium\"\n    },\n    {\n      \"claim\": \"Alice tries to apply ordinary standards of politeness and logic, which the other characters do not share.\",\n      \"evidence\": [\"'Then it wasn't very civil of you to offer it,' said Alice angrily.\", \"'You should learn not to make personal remarks,' Alice said with some severity\"],\n      \"explanation\": \"Alice repeatedly appeals to civility and rudeness, while the others respond with contradictions or non sequiturs, suggesting a mismatch in conversational norms.\",\n      \"confidence\": \"medium\"\n    }\n  ],\n  \"scene\": {\n    \"setting\": \"A table set out under a tree in front of a house; the table is large, with tea on it.\",\n    \"atmosphere\": \"Absurd, contentious, and playful; the scene mixes social friction with nonsensical talk.\",\n    \"visual_details\": [\n      \"A table set out under a tree in front of the house\",\n      \"The March Hare and the Hatter having tea at the table\",\n      \"A Dormouse sitting between them, fast asleep\",\n      \"The other two resting their elbows on the Dormouse\",\n      \"A large table with the three crowded together at one corner\",\n      \"Nothing on the table but tea\",\n      \"A large arm-chair at one end of the table\",\n      \"The Hatter opening his eyes very wide\"\n    ]\n  },\n  \"uncertainties\": [\n    \"The Dormouse's own feelings or awareness cannot be established; it is described as fast asleep.\",\n    \"The motives behind the March Hare and Hatter's behavior are not stated.\",\n    \"The answer to the Hatter's riddle is not given in the excerpt.\",\n    \"The narrator's or listener's emotions are not described.\",\n    \"The exact nature or appearance of the Dormouse beyond being asleep and used as a cushion is not provided.\"\n  ]\n}"}], "evaluation_headers": ["Excerpt ID", "Model", "Summary", "Emotonal Inference", "Evidence Grounding ", "Missing Emotions", "Unsupported Details", "Uncertainty Handling", "Overall notes"]}</script>
+<script>
+(function(){
+"use strict";
+
+/* ---------- helpers ---------- */
+function E(v){ return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function txt(v){
+  if(v==null) return '';
+  if(typeof v==='string') return v;
+  if(typeof v==='number'||typeof v==='boolean') return String(v);
+  if(Array.isArray(v)) return v.map(txt).join('; ');
+  try{ return JSON.stringify(v); }catch(e){ return String(v); }
+}
+function arr(v){ return Array.isArray(v)?v:(v==null||v===''?[]:[v]); }
+function has(v){ return !(v==null || (typeof v==='string' && v.trim()==='') || (Array.isArray(v)&&v.length===0)); }
+function clean(v){ return v==null?'':String(v).replace(/\s+/g,' ').trim(); }
+function $(id){ return document.getElementById(id); }
+
+/* ---------- load data ---------- */
+var RAW;
+try{ RAW = JSON.parse($('dataset').textContent); }
+catch(e){ document.body.insertAdjacentHTML('afterbegin','<div class="note">The embedded dataset could not be read: '+E(e.message)+'</div>'); return; }
+
+var CANON=['Gemini','Claude','DeepSeek'];
+var ALIAS={'claue':'Claude'};
+function canonModel(s){
+  var k=clean(s).toLowerCase(), i;
+  for(i=0;i<CANON.length;i++){ if(CANON[i].toLowerCase()===k) return {name:CANON[i],corrected:String(s)!==CANON[i]}; }
+  if(ALIAS[k]) return {name:ALIAS[k],corrected:true};
+  return {name:null,corrected:false};
+}
+function stripFence(s){ return String(s==null?'':s).trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,''); }
+
+var EXPECTED_KEYS=['summary','characters','emotions','implicit_meaning','scene','uncertainties'];
+var EXPECTED_IM=['claim','evidence','confidence'];
+
+var outputs = RAW.outputs.map(function(o){
+  var cm=canonModel(o.model), parsed=null, err=null;
+  try{
+    parsed=JSON.parse(stripFence(o.raw));
+    if(parsed===null||typeof parsed!=='object'||Array.isArray(parsed)){ err='Top level is not a JSON object'; parsed=null; }
+  }catch(e){ err=e.message; }
+  return {row:o.row,id:clean(o.excerptId),model:cm.name,modelRaw:o.model,modelCorrected:cm.corrected,rawText:o.raw,d:parsed,err:err};
+});
+var evals = RAW.evaluation.map(function(e){
+  var cm=canonModel(e.modelRaw);
+  return {row:e.row,id:clean(e.excerptId),model:cm.name,modelRaw:e.modelRaw,modelCorrected:cm.corrected,f:e.fields};
+});
+var HEAD = RAW.evaluation_headers;
+var RUBRIC = RAW.rubric;
+
+/* matching */
+function key(id,m){ return id+'|'+m; }
+var outByKey={}, evalByKey={}, dupOut=[], dupEval=[];
+outputs.forEach(function(o){ var k=key(o.id,o.model); if(o.model){ if(outByKey[k]) dupOut.push(k); else outByKey[k]=o; } });
+evals.forEach(function(e){ var k=key(e.id,e.model); if(e.model){ if(evalByKey[k]) dupEval.push(k); else evalByKey[k]=e; } });
+var matched=0, evalNoOut=[], outNoEval=[];
+evals.forEach(function(e){ if(e.model&&outByKey[key(e.id,e.model)]) matched++; else evalNoOut.push(e); });
+outputs.forEach(function(o){ if(!(o.model&&evalByKey[key(o.id,o.model)])) outNoEval.push(o); });
+
+var EXCERPTS=[];
+outputs.concat(evals).forEach(function(r){ if(r.id && EXCERPTS.indexOf(r.id)<0) EXCERPTS.push(r.id); });
+var MODELS=CANON.filter(function(m){ return outputs.some(function(o){return o.model===m;}) || evals.some(function(e){return e.model===m;}); });
+
+/* inferred source works (not stated in workbooks) */
+var SOURCE={
+  JE004:{work:'Jane Eyre',basis:'Inferred from the ID prefix and from characters named in all three outputs (Bessie, Georgiana, "Miss Jane").'},
+  JE005:{work:'Jane Eyre',basis:'Inferred from the ID prefix and from the Lowood setting named in all three outputs.'},
+  HM002:{work:'Hamlet',basis:'Inferred from the ID prefix and from the speaker addressing "Hamlet" in all three outputs.'},
+  AW009:{work:'Alice\u2019s Adventures in Wonderland',basis:'Inferred from the ID prefix and from Alice, the March Hare, the Hatter and the Dormouse in all three outputs.'}
+};
+
+/* rubric mapping: evaluation columns (index into fields) to rubric criteria */
+var COL={summary:0,emoInf:1,evidence:2,missing:3,unsup:4,uncert:5,notes:6};
+var MAPPING=[
+  {crit:'Interpretive Accuracy', col:COL.summary, basis:'Inferred', why:'Column "Summary" holds values such as Accurate and Partially accurate, which resemble the rubric options. The sheet does not name the criterion.'},
+  {crit:'Evidence Grounding', col:COL.evidence, basis:'Name match', why:'Column "Evidence Grounding" has the same name as the criterion.'},
+  {crit:'Emotional Precision', col:COL.emoInf, basis:'Weak inference', why:'Column "Emotonal Inference" [sic] is the closest emotion-related column. The rubric asks whether emotions are separated from physical states, actions and traits; some notes mention this, but the column does not say so.'},
+  {crit:'Unsupported Inference', col:COL.unsup, basis:'Name similarity', why:'Column "Unsupported Details" is the closest match. Some cells name the unsupported detail (for example "Physical Fire") rather than a severity.'},
+  {crit:'Uncertainty Calibration', col:COL.uncert, basis:'Name similarity', why:'Column "Uncertainty Handling" is the closest match.'}
+];
+
+/* display-only grouping for indicator dots; not a recorded score */
+var TONE_GOOD=['accurate','strong','good','nothing major','nothing obvious','mostly accurate','mostly strong'];
+var TONE_MID=['partially accurate','mixed','partial','some','minor','few'];
+var TONE_LOW=['physical fire'];
+function tone(v){
+  var n=clean(v).toLowerCase().replace(/\s+,/g,',');
+  if(!n) return 'none';
+  if(TONE_LOW.indexOf(n)>=0) return 'low';
+  if(TONE_GOOD.indexOf(n)>=0) return 'good';
+  if(TONE_MID.indexOf(n)>=0 || /^(minor|strong,|good,)/.test(n)) return 'mid';
+  return 'none';
+}
+
+/* ---------- state ---------- */
+var state={excerpt:EXCERPTS[0],model:MODELS[0],view:'both',aspect:'all',cmp:MODELS.slice(),dots:true,all:false};
+function defaults(){ state={excerpt:EXCERPTS[0],model:MODELS[0],view:'both',aspect:'all',cmp:MODELS.slice(),dots:true,all:false}; }
+
+/* ---------- pieces ---------- */
+function confBadge(c){
+  if(!has(c)) return '<span class="conf">Model confidence not stated</span>';
+  return '<span class="conf" title="The model\'s own stated confidence. It is not a measure of correctness.">Model-stated confidence: '+E(txt(c))+'</span>';
+}
+function quotes(list){
+  var a=arr(list);
+  if(!a.length) return '<p class="missing small evd-none">No quotation supplied.</p>';
+  return '<span class="lab lab-evd">Quoted evidence (as given by the model)</span>'+a.map(function(q){ return '<blockquote class="evd" style="margin-left:0;margin-right:0">\u201C'+E(txt(q))+'\u201D</blockquote>'; }).join('');
+}
+function inf(label,text){
+  if(!has(text)) return '';
+  return '<span class="lab lab-inf">'+E(label)+'</span><div class="inf">'+E(txt(text))+'</div>';
+}
+function missing(label){ return '<p class="missing">'+E(label)+' not provided in this output.</p>'; }
+function bulletList(items){ var a=arr(items); return a.length?'<ul class="plain">'+a.map(function(x){return '<li>'+E(txt(x))+'</li>';}).join('')+'</ul>':''; }
+
+function pSummary(d){
+  return '<h3>Summary</h3>'+(has(d.summary)?'<p>'+E(txt(d.summary))+'</p>':missing('Summary'));
+}
+function pCharacters(d){
+  var a=arr(d.characters);
+  if(!a.length) return '<h3>Characters</h3>'+missing('Characters');
+  return '<h3>Characters and roles</h3><ul class="plain">'+a.map(function(c){
+    if(c&&typeof c==='object') return '<li><b>'+E(txt(c.name)||'Unnamed')+'</b>'+(has(c.role)?': '+E(txt(c.role)):' <span class="missing">(role not provided)</span>')+'</li>';
+    return '<li>'+E(txt(c))+'</li>';
+  }).join('')+'</ul>';
+}
+function emotionCard(e,withEvidence,withExplain){
+  if(!e||typeof e!=='object') return '<div class="card">'+E(txt(e))+'</div>';
+  return '<div class="card"><h4>'+E(txt(e.emotion)||'Emotion not named')+confBadge(e.confidence)+'</h4>'
+    +'<div class="who">Attributed to: '+(has(e.whose_emotion)?E(txt(e.whose_emotion)):'<span class="missing">not stated</span>')+'</div>'
+    +(withEvidence?quotes(e.evidence):'')
+    +(withExplain?inf('Model\'s interpretation',e.explanation)||'<p class="missing small">No explanation supplied.</p>':'')
+    +'</div>';
+}
+function pEmotions(d,withEvidence,withExplain){
+  var a=arr(d.emotions);
+  return '<h3>Emotional interpretations</h3>'+(a.length?a.map(function(e){return emotionCard(e,withEvidence,withExplain);}).join(''):missing('Emotional interpretations'));
+}
+function pImplicit(d){
+  var a=arr(d.implicit_meaning);
+  if(!a.length) return '<h3>Implicit meanings</h3>'+missing('Implicit meanings');
+  return '<h3>Implicit meanings</h3>'+a.map(function(m,i){
+    if(!m||typeof m!=='object') return '<div class="card">'+E(txt(m))+'</div>';
+    var extra=Object.keys(m).filter(function(k){return EXPECTED_IM.indexOf(k)<0;});
+    return '<div class="card"><h4>Implicit meaning '+(i+1)+confBadge(m.confidence)+'</h4>'
+      +(has(m.claim)?'<span class="lab lab-inf">Claim (inference)</span><div class="inf">'+E(txt(m.claim))+'</div>':'<p class="missing small">No claim supplied.</p>')
+      +quotes(m.evidence)
+      +extra.map(function(k){ return inf('Additional field "'+k+'"',m[k]); }).join('')
+      +'</div>';
+  }).join('');
+}
+function pScene(d){
+  var s=d.scene;
+  if(!s||typeof s!=='object') return '<h3>Scene and atmosphere</h3>'+missing('Scene details');
+  return '<h3>Scene and atmosphere</h3><dl class="meta" style="margin:0">'
+    +'<dt>Setting</dt><dd>'+(has(s.setting)?E(txt(s.setting)):'<span class="missing">not provided</span>')+'</dd>'
+    +'<dt>Atmosphere</dt><dd>'+(has(s.atmosphere)?E(txt(s.atmosphere)):'<span class="missing">not provided</span>')+'</dd>'
+    +'<dt>Visual details the model lists</dt><dd>'+(arr(s.visual_details).length?bulletList(s.visual_details):'<span class="missing">not provided</span>')+'</dd></dl>';
+}
+function pUncert(d){
+  var a=arr(d.uncertainties);
+  return '<h3>Uncertainties and limitations the model states</h3>'+(a.length?bulletList(a):missing('Uncertainties'));
+}
+function ratingCell(v){
+  var t=clean(v);
+  if(!t) return '<span class="notrec">Not recorded</span>';
+  return '<span title="Original cell text: '+E(String(v))+'"><span class="dot t-'+tone(v)+'"></span>'+E(t)+'</span>';
+}
+function evalFor(id,m){ return evalByKey[key(id,m)]||null; }
+function pEval(id,m){
+  var ev=evalFor(id,m);
+  if(!ev) return '<h3>Recorded evaluation</h3><p class="notrec">Not recorded: no evaluation row matched this output.</p>';
+  var rows=MAPPING.map(function(mp){ return '<tr><td>'+E(mp.crit)+'</td><td>'+ratingCell(ev.f[mp.col])+'</td></tr>'; }).join('');
+  rows+='<tr><td>Missing emotions (recorded)</td><td>'+(clean(ev.f[COL.missing])?E(clean(ev.f[COL.missing])):'<span class="notrec">Not recorded</span>')+'</td></tr>';
+  return '<h3>Recorded evaluation</h3><div class="scroll"><table><tbody>'+rows+'</tbody></table></div>'
+    +'<span class="lab">Reviewer notes</span>'+(clean(ev.f[COL.notes])?'<div class="revnote">'+E(clean(ev.f[COL.notes]))+'</div>':'<p class="notrec">Not recorded</p>');
+}
+
+/* ---------- renderers ---------- */
+function renderSelects(){
+  $('selExcerpt').innerHTML=EXCERPTS.map(function(id){
+    var s=SOURCE[id]; return '<option value="'+E(id)+'">'+E(id)+(s?' ('+E(s.work)+')':'')+'</option>';
+  }).join('');
+  $('selExcerpt').value=state.excerpt;
+}
+
+function renderDashboard(){
+  var stats=[
+    [EXCERPTS.length,'Evaluated excerpts'],
+    [MODELS.length,'Models ('+MODELS.join(', ')+')'],
+    [outputs.length,'Stored model outputs'],
+    [matched+' of '+evals.length,'Evaluation rows matched to an output'],
+    [RUBRIC.length,'Rubric criteria']
+  ];
+  $('stats').innerHTML=stats.map(function(s){ return '<div class="stat"><b>'+E(s[0])+'</b><span>'+E(s[1])+'</span></div>'; }).join('');
+  var head='<thead><tr><th>Excerpt</th><th>Source work (inferred)</th>'+MODELS.map(function(m){return '<th>'+E(m)+'</th>';}).join('')+'</tr></thead>';
+  var body='<tbody>'+EXCERPTS.map(function(id){
+    var s=SOURCE[id];
+    return '<tr><td><b>'+E(id)+'</b></td><td>'+(s?E(s.work):'<span class="notrec">Not recorded</span>')+'</td>'
+      +MODELS.map(function(m){
+        var o=outByKey[key(id,m)], ev=evalByKey[key(id,m)];
+        if(!o) return '<td><span class="notrec">No output</span></td>';
+        return '<td><button type="button" class="cellbtn" data-open="'+E(id)+'|'+E(m)+'">Output'+(o.d?'':' (unreadable)')+(ev?' + evaluation':' only')+'</button></td>';
+      }).join('')+'</tr>';
+  }).join('')+'</tbody>';
+  $('coverage').innerHTML=head+body;
+}
+
+function renderExcerptInfo(){
+  var id=state.excerpt, s=SOURCE[id];
+  var chars=[], settings=[];
+  outputs.filter(function(o){return o.id===id&&o.d;}).forEach(function(o){
+    arr(o.d.characters).forEach(function(c){ var n=c&&typeof c==='object'?txt(c.name):txt(c); if(n&&chars.indexOf(n)<0) chars.push(n); });
+  });
+  var cited={};
+  outputs.filter(function(o){return o.id===id&&o.d;}).forEach(function(o){
+    arr(o.d.emotions).concat(arr(o.d.implicit_meaning)).forEach(function(it){
+      if(!it||typeof it!=='object') return;
+      arr(it.evidence).forEach(function(q){ var t=clean(txt(q)); if(!t) return; (cited[t]=cited[t]||[]); if(cited[t].indexOf(o.model)<0) cited[t].push(o.model); });
+    });
+  });
+  var keys=Object.keys(cited);
+  $('excerptInfo').innerHTML='<h3>Excerpt '+E(id)+'</h3><dl class="meta" style="margin:0">'
+    +'<dt>Source work</dt><dd>'+(s?E(s.work)+' <span class="muted small">(inferred)</span>':'<span class="notrec">Not recorded</span>')+'</dd>'
+    +'<dt>Basis for the source label</dt><dd class="small muted">'+(s?E(s.basis):'No basis available.')+'</dd>'
+    +'<dt>Passage text</dt><dd><span class="notrec">Not in the attached files.</span> The passage is not reproduced here. Fragments the models quote are listed below.</dd>'
+    +'<dt>Author, edition, line or page range, word count</dt><dd><span class="notrec">Not recorded</span></dd>'
+    +'<dt>Character names that appear in the outputs</dt><dd>'+(chars.length?E(chars.join(', ')):'<span class="notrec">None available</span>')+'</dd>'
+    +'<dt>Outputs and evaluation rows</dt><dd>'+MODELS.map(function(m){ return E(m)+': '+(outByKey[key(id,m)]?'output':'no output')+', '+(evalByKey[key(id,m)]?'evaluation':'no evaluation'); }).join('<br>')+'</dd></dl>'
+    +'<details><summary>Text fragments quoted by the models ('+keys.length+')</summary>'
+    +'<p class="small muted">Taken from model outputs. These are not checked against the source passage, which was not provided.</p>'
+    +keys.map(function(k){ return '<div class="evd small">\u201C'+E(k)+'\u201D<div class="muted small">Cited by '+E(cited[k].join(', '))+'</div></div>'; }).join('')
+    +'</details>';
+}
+
+function renderTabs(){
+  $('modelTabs').innerHTML=MODELS.map(function(m){
+    var has_=!!outByKey[key(state.excerpt,m)];
+    return '<button type="button" role="tab" class="tab" data-model="'+E(m)+'" aria-selected="'+(m===state.model)+'"'+(has_?'':' disabled')+'>'+E(m)+(has_?'':' (no output)')+'</button>';
+  }).join('');
+}
+
+function renderOutput(){
+  var o=outByKey[key(state.excerpt,state.model)], el=$('outputView');
+  el.className='only-'+(state.view==='both'?'both':state.view);
+  if(!o){ el.innerHTML='<div class="panel"><p class="notrec">Not recorded: there is no stored output for '+E(state.model)+' on '+E(state.excerpt)+'.</p></div>'; return; }
+  if(!o.d){
+    el.innerHTML='<div class="panel"><div class="note">This output could not be parsed as JSON ('+E(o.err)+'). The stored text is shown unchanged.</div><div class="rawbox">'+E(o.rawText)+'</div></div>'+'<div class="panel">'+pEval(o.id,o.model)+'</div>';
+    return;
+  }
+  var d=o.d, unknown=Object.keys(d).filter(function(k){return EXPECTED_KEYS.indexOf(k)<0;});
+  el.innerHTML=
+    '<div class="panel">'+pSummary(d)+'</div>'
+   +'<div class="panel">'+pCharacters(d)+'</div>'
+   +'<div class="panel">'+pEmotions(d,true,true)+'<p class="small muted">Confidence labels are what the model reported about itself. They are not verified and do not indicate that an interpretation is correct.</p></div>'
+   +'<div class="panel">'+pImplicit(d)+'</div>'
+   +'<div class="panel">'+pScene(d)+'</div>'
+   +'<div class="panel">'+pUncert(d)+'</div>'
+   +(unknown.length?'<div class="panel"><h3>Other fields in this output</h3>'+unknown.map(function(k){return inf(k,d[k]);}).join('')+'</div>':'')
+   +'<div class="panel">'+pEval(o.id,o.model)+'</div>'
+   +'<details><summary>Show stored raw output</summary><div class="rawbox">'+E(o.rawText)+'</div></details>';
+}
+
+function comparePanel(m){
+  var o=outByKey[key(state.excerpt,m)];
+  var h='<div class="panel panel-col"><h3>'+E(m)+'</h3>';
+  if(!o){ return h+'<p class="notrec">Not recorded: no output for this model.</p></div>'; }
+  if(!o.d){ return h+'<div class="note">Output could not be parsed as JSON ('+E(o.err)+').</div><div class="rawbox">'+E(o.rawText)+'</div></div>'; }
+  var d=o.d, a=state.aspect, out='';
+  if(a==='all'||a==='summary') out+=pSummary(d).replace('<h3>','<h4>').replace('</h3>','</h4>');
+  if(a==='all'||a==='emotions') out+=pEmotions(d,a==='emotions'||a==='all',true).replace('<h3>','<h4>').replace('</h3>','</h4>');
+  if(a==='evidence'){
+    var items=arr(d.emotions).map(function(e){return {label:(e&&txt(e.emotion))||'Emotion',ev:e&&e.evidence};}).concat(arr(d.implicit_meaning).map(function(x,i){return {label:'Implicit meaning '+(i+1),ev:x&&x.evidence};}));
+    out+='<h4>Quoted evidence by item</h4>'+(items.length?items.map(function(it){ return '<div class="card"><h4>'+E(it.label)+'</h4>'+quotes(it.ev)+'</div>'; }).join(''):missing('Evidence'));
+  }
+  if(a==='all'||a==='uncertainty'){
+    out+=pUncert(d).replace('<h3>','<h4>').replace('</h3>','</h4>');
+    var ev=evalFor(state.excerpt,m);
+    if(a==='uncertainty'){
+      out+='<h4>Recorded: Uncertainty Handling</h4><p>'+(ev?ratingCell(ev.f[COL.uncert]):'<span class="notrec">Not recorded</span>')+'</p>';
+    }
+  }
+  return h+out+'</div>';
+}
+function renderCompare(){
+  $('modelChips').innerHTML=MODELS.map(function(m){ return '<button type="button" class="chip" data-cmp="'+E(m)+'" aria-pressed="'+(state.cmp.indexOf(m)>=0)+'">'+E(m)+'</button>'; }).join('');
+  $('selAspect').value=state.aspect;
+  var list=MODELS.filter(function(m){return state.cmp.indexOf(m)>=0;});
+  var el=$('comparePanels');
+  el.style.gridTemplateColumns='repeat('+Math.max(1,list.length)+',minmax(0,1fr))';
+  el.innerHTML=list.length?list.map(comparePanel).join(''):'<div class="panel"><p class="notrec">Select at least one model to compare.</p></div>';
+  renderRatingsTable($('compareRatings'),[state.excerpt],list.length?list:MODELS);
+}
+
+function renderRatingsTable(target,ids,models){
+  var anyRec=ids.some(function(id){ return models.some(function(m){ return evalFor(id,m); }); });
+  if(!anyRec){ target.innerHTML='<p class="notrec">Not recorded: the workbook has no evaluation rows for this selection.</p>'; return; }
+  var html='';
+  ids.forEach(function(id){
+    html+='<h4 style="margin-top:6px">'+E(id)+(SOURCE[id]?' ('+E(SOURCE[id].work)+')':'')+'</h4><table><thead><tr><th>Criterion (recorded column)</th>'+models.map(function(m){return '<th>'+E(m)+'</th>';}).join('')+'</tr></thead><tbody>';
+    MAPPING.forEach(function(mp){
+      html+='<tr><td>'+E(mp.crit)+'<div class="small muted">'+E(HEAD[mp.col+2]?clean(HEAD[mp.col+2]):'')+'</div></td>'+models.map(function(m){ var ev=evalFor(id,m); return '<td>'+(ev?ratingCell(ev.f[mp.col]):'<span class="notrec">Not recorded</span>')+'</td>'; }).join('')+'</tr>';
+    });
+    html+='<tr><td>Missing emotions (recorded)</td>'+models.map(function(m){ var ev=evalFor(id,m); return '<td>'+(ev&&clean(ev.f[COL.missing])?E(clean(ev.f[COL.missing])):'<span class="notrec">Not recorded</span>')+'</td>'; }).join('')+'</tr>';
+    html+='<tr><td>Reviewer notes</td>'+models.map(function(m){ var ev=evalFor(id,m); return '<td class="small">'+(ev&&clean(ev.f[COL.notes])?E(clean(ev.f[COL.notes])):'<span class="notrec">Not recorded</span>')+'</td>'; }).join('')+'</tr>';
+    html+='</tbody></table>';
+  });
+  target.innerHTML=html;
+}
+
+function renderRubric(){
+  $('rubricNote').innerHTML='<b>How to read this.</b> The evaluation sheet records free-text assessments in its own columns. They are not the fixed rubric options, so they are shown verbatim and not converted. Each rubric criterion below is linked to a column; the strength of that link is stated. The coloured dots are a display grouping chosen by this interface (blue: favourable wording, sand: qualified or mixed wording, burgundy: a named problem, grey: not grouped). They are not recorded scores.';
+  document.body.classList.toggle('hide-dots',!state.dots);
+  var id=state.excerpt;
+  $('rubricCards').innerHTML='<h3>Selected excerpt: '+E(id)+(SOURCE[id]?' ('+E(SOURCE[id].work)+')':'')+'</h3>'+
+    RUBRIC.map(function(r){
+      var mp=MAPPING.filter(function(x){return x.crit===r.criterion;})[0];
+      var inner;
+      if(!mp){ inner='<p class="notrec">Not recorded: no evaluation column is linked to this criterion.</p>'; }
+      else{
+        inner='<div class="grid g3">'+MODELS.map(function(m){
+          var ev=evalFor(id,m);
+          return '<div><div class="muted small">'+E(m)+'</div>'+(ev?ratingCell(ev.f[mp.col]):'<span class="notrec">Not recorded</span>')+'</div>';
+        }).join('')+'</div>'
+        +'<p class="small muted" style="margin:10px 0 0"><b>Link to workbook column:</b> '+E(mp.basis)+'. '+E(mp.why)+'</p>';
+      }
+      return '<div class="panel"><h3>'+E(r.criterion)+'</h3>'
+        +'<p class="small muted" style="margin-bottom:10px"><b>Rubric rule:</b> '+E(r.rule)+' <b>Rubric options:</b> '+E(r.options)+'</p>'+inner+'</div>';
+    }).join('')
+    +'<div class="panel"><h3>Recorded fields outside the five criteria</h3><div class="grid g3">'+MODELS.map(function(m){
+      var ev=evalFor(id,m);
+      return '<div><div class="muted small">'+E(m)+'</div><p style="margin:4px 0"><b>Missing emotions:</b> '+(ev&&clean(ev.f[COL.missing])?E(clean(ev.f[COL.missing])):'<span class="notrec">Not recorded</span>')+'</p>'
+        +'<p class="small" style="margin:4px 0"><b>Notes:</b> '+(ev&&clean(ev.f[COL.notes])?E(clean(ev.f[COL.notes])):'<span class="notrec">Not recorded</span>')+'</p></div>';
+    }).join('')+'</div></div>';
+  var allEl=$('rubricAll'); allEl.hidden=!state.all;
+  $('togAll').setAttribute('aria-pressed',String(state.all));
+  $('togDots').setAttribute('aria-pressed',String(state.dots));
+  if(state.all){ allEl.innerHTML='<h3>All recorded evaluation rows</h3>'; var tmp=document.createElement('div'); renderRatingsTable(tmp,EXCERPTS,MODELS); allEl.appendChild(tmp); }
+}
+
+function renderFlags(){
+  var f=[];
+  f.push({ok:matched===evals.length&&!dupOut.length&&!dupEval.length&&evals.length===outputs.length,
+    t:'Matching result',
+    d:matched+' of '+evals.length+' evaluation rows matched exactly one stored output on excerpt ID and model. '+outNoEval.length+' outputs have no evaluation row; '+evalNoOut.length+' evaluation rows have no output; '+(dupOut.length+dupEval.length)+' duplicate keys.'});
+  evals.concat(outputs).filter(function(r){return r.modelCorrected;}).forEach(function(r){
+    f.push({t:'Model name corrected for matching',d:'Row '+r.row+' (excerpt '+r.id+') reads "'+String(r.modelRaw)+'" and was matched to '+(r.model||'no model')+'. The original text is kept in the embedded data. Confirm that this is a typo.'});
+  });
+  outputs.filter(function(o){return !o.d;}).forEach(function(o){ f.push({t:'Output could not be parsed',d:o.id+' / '+o.model+': '+o.err+'. Shown as raw text.'}); });
+  var extraKeys=[];
+  outputs.forEach(function(o){ if(!o.d) return;
+    Object.keys(o.d).forEach(function(k){ if(EXPECTED_KEYS.indexOf(k)<0) extraKeys.push(o.id+'/'+o.model+' top-level "'+k+'"'); });
+    arr(o.d.implicit_meaning).forEach(function(m){ if(m&&typeof m==='object') Object.keys(m).forEach(function(k){ if(EXPECTED_IM.indexOf(k)<0){ var s=o.id+'/'+o.model+' implicit_meaning "'+k+'"'; if(extraKeys.indexOf(s)<0) extraKeys.push(s); } }); });
+  });
+  if(extraKeys.length) f.push({t:'Fields outside the common output schema',d:extraKeys.join('; ')+'. Displayed as additional fields.'});
+  evals.forEach(function(e){
+    var blanks=[]; e.f.forEach(function(v,i){ if(!clean(v)) blanks.push(clean(HEAD[i+2])); });
+    if(blanks.length) f.push({t:'Blank evaluation cell',d:e.id+' / '+(e.model||e.modelRaw)+': '+blanks.join(', ')+' is empty and is shown as "Not recorded".'});
+  });
+  f.push({t:'Passage text and metadata are not in the files',d:'No workbook contains the excerpt passages, source titles, authors or editions. Source works are inferred from the IDs and from names in the outputs. The explorer lists text the models quote, but cannot check those quotations against the passage.'});
+  f.push({t:'Evaluation columns do not carry the rubric criterion names',d:'The workbook has "Summary", "Emotonal Inference", "Evidence Grounding", "Missing Emotions", "Unsupported Details", "Uncertainty Handling" and "Overall notes". Only Evidence Grounding matches a rubric criterion by name; the other links are inferred and labelled in the rubric section. The Emotional Precision link is the weakest.'});
+  f.push({t:'Recorded values are free text, not rubric options',d:'Values such as "Mostly Strong" or "Strong, with some overinterpretation" are not the rubric\'s fixed options (for example Strong / Mixed / Weak). They are displayed as written, with original spelling, and are not converted or averaged.'});
+  f.push({t:'No reviewer identity, date or rating scale in the sheets',d:'The files do not say who reviewed the outputs, when, or whether more than one reviewer was involved.'});
+  f.push({t:'Emotion owner labels are not standardised',d:'The "whose_emotion" field varies between outputs (for example "Narrator", "Speaker", "speaker", "atmosphere", "character"). Labels are shown as the model wrote them.'});
+  f.push({t:'LitEval-15 coverage',d:'LitEval-15 is described as 15 excerpts; these files contain 4 excerpts evaluated by 3 models (12 outputs).'});
+  $('flags').innerHTML=f.map(function(x){ return '<div class="flag'+(x.ok?' ok':'')+'"><b>'+E(x.t)+'.</b> '+E(x.d)+'</div>'; }).join('');
+}
+
+function renderAll(){
+  $('selExcerpt').value=state.excerpt;
+  if(!outByKey[key(state.excerpt,state.model)]){
+    var alt=MODELS.filter(function(m){return outByKey[key(state.excerpt,m)];})[0]; if(alt) state.model=alt;
+  }
+  renderExcerptInfo(); renderTabs();
+  Array.prototype.forEach.call(document.querySelectorAll('[data-view]'),function(b){ b.setAttribute('aria-pressed',String(b.getAttribute('data-view')===state.view)); });
+  renderOutput(); renderCompare(); renderRubric();
+}
+
+/* ---------- events ---------- */
+$('selExcerpt').addEventListener('change',function(){ state.excerpt=this.value; renderAll(); });
+$('modelTabs').addEventListener('click',function(e){ var b=e.target.closest('[data-model]'); if(!b||b.disabled) return; state.model=b.getAttribute('data-model'); renderTabs(); renderOutput(); });
+document.querySelector('.chips[aria-label="Show"]').addEventListener('click',function(e){ var b=e.target.closest('[data-view]'); if(!b) return; state.view=b.getAttribute('data-view'); renderAll(); });
+$('selAspect').addEventListener('change',function(){ state.aspect=this.value; renderCompare(); });
+$('modelChips').addEventListener('click',function(e){ var b=e.target.closest('[data-cmp]'); if(!b) return; var m=b.getAttribute('data-cmp'), i=state.cmp.indexOf(m); if(i>=0) state.cmp.splice(i,1); else state.cmp.push(m); renderCompare(); });
+$('coverage').addEventListener('click',function(e){ var b=e.target.closest('[data-open]'); if(!b) return; var p=b.getAttribute('data-open').split('|'); state.excerpt=p[0]; state.model=p[1]; renderAll(); document.getElementById('explorer').scrollIntoView(); });
+$('togDots').addEventListener('click',function(){ state.dots=!state.dots; renderRubric(); });
+$('togAll').addEventListener('click',function(){ state.all=!state.all; renderRubric(); });
+$('btnReset').addEventListener('click',function(){ defaults(); renderAll(); window.scrollTo(0,0); });
+
+/* ---------- init ---------- */
+renderSelects(); renderDashboard(); renderFlags(); renderAll();
+})();
+</script>
+</body>
+</html>
